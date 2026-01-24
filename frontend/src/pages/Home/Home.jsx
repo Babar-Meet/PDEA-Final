@@ -8,12 +8,14 @@ const Home = ({ videos, loading }) => {
   const [category, setCategory] = useState('all')
 
   const categories = [
-    'All', 'Music', 'Gaming', 'Live', 'Mixes', 'Computer programming',
-    'Comedy', 'Recently uploaded', 'Watched', 'New to you'
+    'All', 'Music', 'Gaming', 'Live', 'Mixes', 'Programming',
+    'Comedy', 'Recently uploaded', 'Watched', 'New to you',
+    'Action', 'Drama', 'Documentary', 'Tutorials'
   ]
 
   return (
     <div className="home">
+      {/* Categories Bar */}
       <div className="home__categories">
         <div className="categories__scroll">
           {categories.map((cat) => (
@@ -28,8 +30,9 @@ const Home = ({ videos, loading }) => {
         </div>
       </div>
 
+      {/* View Toggle */}
       <div className="home__header">
-        <h2 className="home__title">Recommended Videos</h2>
+        <h2 className="home__title">Recommended</h2>
         <div className="view-toggle">
           <button
             className={`view-toggle__btn ${viewMode === 'grid' ? 'active' : ''}`}
@@ -48,13 +51,8 @@ const Home = ({ videos, loading }) => {
         </div>
       </div>
 
+      {/* Video Grid */}
       <VideoGrid videos={videos} loading={loading} viewMode={viewMode} />
-
-      {videos.length > 0 && !loading && (
-        <div className="home__stats">
-          <p>Showing {videos.length} videos from your local collection</p>
-        </div>
-      )}
     </div>
   )
 }

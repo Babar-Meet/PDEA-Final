@@ -1,5 +1,7 @@
 .home {
   padding: 0 20px;
+  max-width: 1800px;
+  margin: 0 auto;
 }
 
 .home__categories {
@@ -24,7 +26,7 @@
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
   flex-shrink: 0;
 }
 
@@ -35,6 +37,7 @@
 .category-btn.active {
   background-color: #ffffff;
   color: #0f0f0f;
+  font-weight: 600;
 }
 
 .home__header {
@@ -42,8 +45,6 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #303030;
 }
 
 .home__title {
@@ -83,16 +84,11 @@
   color: #ffffff;
 }
 
-.home__stats {
-  text-align: center;
-  padding: 30px 0;
-  color: #aaaaaa;
-  font-size: 14px;
-  border-top: 1px solid #303030;
-  margin-top: 40px;
-}
-
 @media (max-width: 768px) {
+  .home {
+    padding: 0 10px;
+  }
+  
   .home__header {
     flex-direction: column;
     align-items: flex-start;

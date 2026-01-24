@@ -11,35 +11,116 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Path to videos folder
+// Paths
 const videosDir = path.join(__dirname, 'public', 'videos');
+const thumbnailsDir = path.join(__dirname, 'public', 'thumbnails');
 
-// Ensure videos directory exists
-if (!fs.existsSync(videosDir)) {
-  fs.mkdirSync(videosDir, { recursive: true });
-  console.log(`Created videos directory: ${videosDir}`);
-}
+// Ensure directories exist
+if (!fs.existsSync(videosDir)) fs.mkdirSync(videosDir, { recursive: true });
+if (!fs.existsSync(thumbnailsDir)) fs.mkdirSync(thumbnailsDir, { recursive: true });
 
-// Serve static video files
+// Serve static files
 app.use('/videos', express.static(videosDir));
+app.use('/thumbnails', express.static(thumbnailsDir));
 
-// API: Get all videos with info
+// Helper function to get video info
+const getVideoInfo = (filePath) => {
+  const stats = fs.statSync(filePath);
+  const ext = path.extname(filePath).toLowerCase();
+  const name = path.basename(filePath);
+  const nameWithoutExt = path.basename(filePath, ext);
+  
+  // Check for thumbnail - look for various image extensions
+  const thumbnailExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+  let thumbnail = null;
+  
+  for (const thumbExt of thumbnailExtensions) {
+    const thumbPath = path.join(thumbnailsDir, nameWithoutExt + thumbExt);
+    if (fs.existsSync(thumbPath)) {
+      thumbnail = `/thumbnails/${encodeURIComponent(nameWithoutExt + thumbExt)}`;
+      break;
+    }
+  }
+  
+  // If no thumbnail found, use random placeholder
+  if (!thumbnail) {
+    // Use gradient based on filename hash
+    const colors = [
+      'ff6b6b', '48dbfb', '1dd1a1', 'feca57', 'ff9ff3', '54a0ff', '5f27cd', '00d2d3'
+    ];
+    const hash = name.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    const color = colors[Math.abs(hash) % colors.length];
+    thumbnail = `https://via.placeholder.com/320x180/${color}/ffffff?text=${encodeURIComponent(nameWithoutExt)}`;
+  }
+  
+  // Generate YouTube-like data
+  const views = Math.floor(Math.random() * 1000000) + 1000;
+  const likes = Math.floor(Math.random() * 10000) + 100;
+  const uploadDate = new Date(Date.now() - Math.random() * 31536000000);
+  
+  // Use filename as title (clean it up)
+  const cleanTitle = nameWithoutExt
+    .replace(/[-_]/g, ' ')
+    .replace(/\.[^/.]+$/, '')
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+  
+  const channels = [
+    { name: 'Tech Videos', color: 'ff0000' },
+    { name: 'Entertainment Hub', color: '065fd4' },
+    { name: 'Learning Channel', color: '00a2ff' },
+    { name: 'Funny Clips', color: 'f00' },
+    { name: 'Movie Trailers', color: 'ff6b6b' },
+    { name: 'Music Videos', color: '1dd1a1' }
+  ];
+  
+  const channel = channels[Math.floor(Math.random() * channels.length)];
+  
+  // Generate realistic duration (1-30 minutes)
+  const totalSeconds = Math.floor(Math.random() * 1800) + 60;
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  const duration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  
+  return {
+    id: name,
+    filename: name,
+    title: cleanTitle,
+    channel: channel.name,
+    channelAvatar: `https://ui-avatars.com/api/?name=${channel.name.replace(/ /g, '+')}&background=${channel.color}&color=fff&bold=true`,
+    url: `/videos/${encodeURIComponent(name)}`,
+    thumbnail: thumbnail,
+    duration: duration,
+    views: views.toLocaleString(),
+    likes: likes.toLocaleString(),
+    uploadDate: uploadDate.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    }),
+    size: formatFileSize(stats.size),
+    type: ext.replace('.', '').toUpperCase(),
+    createdAt: stats.birthtime
+  };
+};
+
+// API: Get all videos
 app.get('/api/videos', (req, res) => {
   try {
-    // Check if videos directory exists
     if (!fs.existsSync(videosDir)) {
       return res.json({ 
         success: true, 
-        videos: [],
-        message: 'Videos directory does not exist'
+        videos: []
       });
     }
 
-    // Read all files in videos directory
     const files = fs.readdirSync(videosDir);
-    
-    // Filter only video files
     const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv', '.flv', '.wmv', '.m4v'];
+    
     const videos = files
       .filter(file => {
         const ext = path.extname(file).toLowerCase();
@@ -47,112 +128,58 @@ app.get('/api/videos', (req, res) => {
       })
       .map(file => {
         const filePath = path.join(videosDir, file);
-        const stats = fs.statSync(filePath);
-        const ext = path.extname(file).toLowerCase();
-        
-        // Generate random view count, likes, etc. for demo
-        const views = Math.floor(Math.random() * 1000000) + 1000;
-        const likes = Math.floor(Math.random() * 10000) + 100;
-        const uploadDate = new Date(Date.now() - Math.random() * 31536000000); // Random date within last year
-        
-        // Generate dummy titles based on filename
-        const filenameWithoutExt = file.replace(/\.[^/.]+$/, "");
-        const dummyTitles = [
-          `${filenameWithoutExt} - Amazing Video!`,
-          `Watch ${filenameWithoutExt} in HD`,
-          `${filenameWithoutExt} Tutorial`,
-          `Best ${filenameWithoutExt} Compilation`,
-          `${filenameWithoutExt} Full HD Quality`
-        ];
-        
-        const dummyChannels = [
-          'Tech Videos',
-          'Entertainment Hub',
-          'Learning Channel',
-          'Funny Clips',
-          'Movie Trailers',
-          'Music Videos'
-        ];
-        
-        return {
-          id: file,
-          filename: file,
-          title: dummyTitles[Math.floor(Math.random() * dummyTitles.length)],
-          channel: dummyChannels[Math.floor(Math.random() * dummyChannels.length)],
-          channelAvatar: `https://ui-avatars.com/api/?name=${dummyChannels[Math.floor(Math.random() * dummyChannels.length)]}&background=random`,
-          url: `/videos/${encodeURIComponent(file)}`,
-          thumbnail: `https://picsum.photos/320/180?random=${Math.random()}`, // Random placeholder image
-          duration: `${Math.floor(Math.random() * 10) + 1}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`, // Random duration
-          views: views.toLocaleString(),
-          likes: likes.toLocaleString(),
-          uploadDate: uploadDate.toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'short', 
-            day: 'numeric' 
-          }),
-          size: formatFileSize(stats.size),
-          type: ext.replace('.', '').toUpperCase(),
-          createdAt: stats.birthtime
-        };
+        return getVideoInfo(filePath);
       });
 
     res.json({ 
       success: true, 
       videos,
-      total: videos.length,
-      folderPath: videosDir
+      total: videos.length
     });
     
   } catch (error) {
     console.error('Error reading videos:', error);
     res.status(500).json({ 
       success: false, 
-      error: 'Failed to read videos directory' 
+      error: 'Failed to load videos' 
+    });
+  }
+});
+
+// API: Get video by filename
+app.get('/api/video/:filename', (req, res) => {
+  try {
+    const filename = decodeURIComponent(req.params.filename);
+    const filePath = path.join(videosDir, filename);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Video not found' 
+      });
+    }
+    
+    const videoInfo = getVideoInfo(filePath);
+    res.json({ success: true, video: videoInfo });
+    
+  } catch (error) {
+    console.error('Error getting video:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to get video' 
     });
   }
 });
 
 // Helper function to format file size
 function formatFileSize(bytes) {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
 }
 
-// Get server info
-app.get('/api/info', (req, res) => {
-  try {
-    let totalSize = 0;
-    let videoCount = 0;
-    
-    if (fs.existsSync(videosDir)) {
-      const files = fs.readdirSync(videosDir);
-      const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv', '.flv', '.wmv', '.m4v'];
-      
-      files.forEach(file => {
-        const ext = path.extname(file).toLowerCase();
-        if (videoExtensions.includes(ext)) {
-          const filePath = path.join(videosDir, file);
-          totalSize += fs.statSync(filePath).size;
-          videoCount++;
-        }
-      });
-    }
-    
-    res.json({
-      videosFolder: videosDir,
-      videoCount,
-      totalSize: formatFileSize(totalSize),
-      serverTime: new Date().toISOString()
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Stream video with range support (for seeking)
+// Stream video endpoint (for seeking)
 app.get('/api/stream/:filename', (req, res) => {
   try {
     const filename = decodeURIComponent(req.params.filename);
@@ -189,18 +216,18 @@ app.get('/api/stream/:filename', (req, res) => {
       fs.createReadStream(filePath).pipe(res);
     }
   } catch (error) {
-    console.error('Error streaming video:', error);
     res.status(500).json({ error: 'Failed to stream video' });
   }
 });
 
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Start server
 app.listen(PORT, () => {
-  console.log(`🎬 Video Server running on: http://localhost:${PORT}`);
-  console.log(`📁 Videos folder: ${videosDir}`);
-  console.log(`📺 API Endpoints:`);
-  console.log(`   GET /api/videos - List all videos`);
-  console.log(`   GET /api/info - Server info`);
-  console.log(`   GET /videos/:filename - Stream video`);
-  console.log(`\n👉 Add your video files to: ${videosDir}`);
+  console.log(`🚀 Server running: http://localhost:${PORT}`);
+  console.log(`📁 Videos: ${videosDir}`);
+  console.log(`🖼️  Thumbnails: ${thumbnailsDir}`);
 });

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import VideoPlayer from '../../components/VideoPlayer/VideoPlayer'
 import VideoSidebar from '../../components/VideoSidebar/VideoSidebar'
-import { ThumbsUp, ThumbsDown, Share2, Download, MoreVertical, User } from 'lucide-react'
+import { ThumbsUp, ThumbsDown, Share2, Download, MoreVertical } from 'lucide-react'
 import './Watch.css'
 
 const Watch = ({ videos }) => {
@@ -22,7 +22,6 @@ const Watch = ({ videos }) => {
     return (
       <div className="watch__loading">
         <div className="loading-spinner"></div>
-        <p>Loading video...</p>
       </div>
     )
   }
@@ -31,7 +30,6 @@ const Watch = ({ videos }) => {
     return (
       <div className="watch__not-found">
         <h2>Video not found</h2>
-        <p>The video you're looking for doesn't exist.</p>
       </div>
     )
   }
@@ -58,7 +56,7 @@ const Watch = ({ videos }) => {
                 <span>{video.likes}</span>
               </button>
               
-              <button className="action-btn dislike-btn">
+              <button className="action-btn">
                 <ThumbsDown size={20} />
                 <span>Dislike</span>
               </button>
@@ -70,15 +68,13 @@ const Watch = ({ videos }) => {
               
               <button className="action-btn">
                 <Download size={20} />
-                <span>Download</span>
+                <span>Save</span>
               </button>
             </div>
             
-            <div className="watch__right-actions">
-              <button className="action-btn">
-                <MoreVertical size={20} />
-              </button>
-            </div>
+            <button className="action-btn menu-btn">
+              <MoreVertical size={20} />
+            </button>
           </div>
           
           <div className="watch__channel">
@@ -92,12 +88,7 @@ const Watch = ({ videos }) => {
             </div>
             
             <div className="watch__description">
-              <p className="description__text">
-                {video.filename} • {video.size} • {video.type}
-              </p>
-              <p className="description__more">
-                This video is from your local collection. The title, views, and other details are randomly generated for demonstration purposes.
-              </p>
+              <p>{video.filename} • {video.size}</p>
             </div>
           </div>
         </div>

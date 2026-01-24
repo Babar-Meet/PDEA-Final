@@ -15,7 +15,7 @@ const VideoSidebar = ({ videos, currentVideoId }) => {
 
   return (
     <div className="video-sidebar">
-      <h3 className="video-sidebar__title">Up Next</h3>
+      <h3 className="video-sidebar__title">Recommended</h3>
       <div className="video-sidebar__list">
         {filteredVideos.map((video) => (
           <VideoCard key={video.id} video={video} compact={true} />

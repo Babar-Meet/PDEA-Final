@@ -17,10 +17,20 @@ function App() {
 
   const fetchVideos = async () => {
     try {
+      setLoading(true)
       const response = await fetch('http://localhost:5000/api/videos')
       const data = await response.json()
+      
       if (data.success) {
-        setVideos(data.videos)
+        // Make sure thumbnails have full URL
+        const videosWithFullUrls = data.videos.map(video => ({
+          ...video,
+          thumbnail: video.thumbnail.startsWith('/') 
+            ? `http://localhost:5000${video.thumbnail}`
+            : video.thumbnail
+        }))
+        
+        setVideos(videosWithFullUrls)
       }
     } catch (error) {
       console.error('Error fetching videos:', error)

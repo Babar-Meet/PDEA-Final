@@ -13,14 +13,24 @@ const VideoCard = ({ video, compact = false }) => {
     views,
     duration,
     uploadDate,
-    size
+    size,
+    filename
   } = video
 
+  // Check if thumbnail is local or external
+  const isLocalThumbnail = thumbnail && thumbnail.startsWith('/thumbnails/');
+  
   if (compact) {
     return (
       <Link to={`/watch/${id}`} className="video-card video-card--compact">
         <div className="video-card__thumbnail">
-          <img src={thumbnail} alt={title} loading="lazy" />
+          <img 
+            src={thumbnail} 
+            alt={title} 
+            loading="lazy"
+            className={isLocalThumbnail ? 'local-thumbnail' : ''}
+          />
+          {isLocalThumbnail && <div className="thumbnail-badge">🖼️</div>}
           <div className="video-card__duration">{duration}</div>
           <div className="video-card__overlay">
             <Play size={20} />
@@ -41,6 +51,7 @@ const VideoCard = ({ video, compact = false }) => {
             <span>{duration}</span>
             <span>•</span>
             <span>{size}</span>
+            {isLocalThumbnail && <span className="thumbnail-indicator">🖼️ Local Thumbnail</span>}
           </div>
         </div>
         <button className="video-card__menu">
@@ -53,7 +64,13 @@ const VideoCard = ({ video, compact = false }) => {
   return (
     <Link to={`/watch/${id}`} className="video-card">
       <div className="video-card__thumbnail">
-        <img src={thumbnail} alt={title} loading="lazy" />
+        <img 
+          src={thumbnail} 
+          alt={title} 
+          loading="lazy"
+          className={isLocalThumbnail ? 'local-thumbnail' : ''}
+        />
+        {isLocalThumbnail && <div className="thumbnail-badge">🖼️</div>}
         <div className="video-card__duration">{duration}</div>
         <div className="video-card__overlay">
           <Play size={30} />
@@ -75,6 +92,7 @@ const VideoCard = ({ video, compact = false }) => {
             <span>{duration}</span>
             <span>•</span>
             <span>{size}</span>
+            {isLocalThumbnail && <span className="thumbnail-indicator">🖼️</span>}
           </div>
         </div>
         <button className="video-card__menu">

@@ -106,16 +106,6 @@
   align-items: center;
 }
 
-.video-card__file-info {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: #aaaaaa;
-  margin-top: 4px;
-  opacity: 0.8;
-}
-
 .video-card__menu {
   background: none;
   border: none;
