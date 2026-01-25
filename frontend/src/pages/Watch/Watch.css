@@ -1,13 +1,14 @@
 .watch {
   display: grid;
   grid-template-columns: 1fr 400px;
-  gap: 30px;
+  /* not needed 
+  gap: 30px; */
 }
 
 .watch__main {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  /* gap: 20px; */
 }
 
 .watch__player {
@@ -148,8 +149,6 @@
 }
 
 .watch__sidebar {
-  position: sticky;
-  top: 76px;
   height: calc(100vh - 96px);
 }
 
