@@ -1,133 +1,110 @@
-.sidebar {
-  position: fixed;
-  top: 56px;
-  left: 0;
-  bottom: 0;
-  width: 72px;
-  background-color: #0f0f0f;
-  border-right: 1px solid #303030;
-  overflow-y: auto;
-  transition: width 0.3s ease;
-  z-index: 100;
-}
+/* VideoSidebar.css */
 
-.sidebar--open {
-  width: 240px;
-}
-
-.sidebar--hidden {
-  width: 0;
+.video-sidebar {
+  width: 402px;
   padding: 0;
-  overflow: hidden;
-}
-
-.sidebar__nav {
-  padding: 12px 0;
-}
-
-.sidebar__section {
-  padding-bottom: 12px;
-}
-
-.sidebar__title {
-  font-size: 16px;
-  font-weight: 500;
-  padding: 8px 24px 6px;
-  color: #aaaaaa;
-  display: none;
-}
-
-.sidebar--open .sidebar__title {
-  display: block;
-}
-
-.sidebar__item {
-  display: flex;
-  align-items: center;
-  padding: 10px 24px;
-  text-decoration: none;
-  color: #ffffff;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  white-space: nowrap;
-}
-
-.sidebar__item:hover {
-  background-color: #272727;
-}
-
-.sidebar__item.active {
-  background-color: #272727;
-  font-weight: 500;
-}
-
-.sidebar__item.active .sidebar__icon {
-  color: #ff0000;
-}
-
-.sidebar__icon {
-  width: 24px;
-  height: 24px;
-  margin-right: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  margin-left: 24px;
   flex-shrink: 0;
+  background-color: transparent;
+  overflow-y: visible;
+  box-sizing: border-box;
 }
 
-.sidebar--open .sidebar__icon {
-  margin-right: 24px;
+.video-sidebar__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f1f1f1;
+  margin: 0 0 8px 0;
+  padding: 0;
+  letter-spacing: -0.3px;
+  line-height: 22px;
 }
 
-.sidebar__label {
-  font-size: 14px;
-  opacity: 0.9;
-  display: none;
-}
-
-.sidebar--open .sidebar__label {
-  display: block;
-}
-
-.sidebar__label-wrapper {
+.video-sidebar__list {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
 }
 
-.sidebar__count {
-  font-size: 12px;
-  color: #aaaaaa;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 2px 6px;
-  border-radius: 8px;
-  min-width: 24px;
+.video-sidebar__empty {
+  color: #f1f1f1;
+  font-size: 14px;
   text-align: center;
+  padding: 24px 0;
+  color: #aaa;
 }
 
-.sidebar__view-all {
-  color: #3ea6ff !important;
-  font-weight: 500;
+/* Remove any fixed positioning and z-index */
+/* The sidebar should scroll with the main content */
+
+/* YouTube-like VideoCard spacing for compact mode */
+.video-card--compact {
+  transition: all 0.2s cubic-bezier(0.05, 0, 0, 1);
 }
 
-.sidebar__view-all:hover {
-  background-color: rgba(62, 166, 255, 0.1) !important;
+.video-card--compact:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
 }
 
-.sidebar__divider {
-  height: 1px;
-  background-color: #303030;
-  margin: 12px 0;
+/* Responsive behavior - YouTube collapses sidebar on smaller screens */
+@media (max-width: 1312px) {
+  .video-sidebar {
+    width: 348px;
+    margin-left: 16px;
+  }
 }
 
-@media (max-width: 768px) {
-  .sidebar {
-    width: 0;
+@media (max-width: 1150px) {
+  .video-sidebar {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #303030;
   }
   
-  .sidebar--open {
-    width: 240px;
+  .video-sidebar__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
   }
 }
 
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .video-sidebar {
+    padding-top: 16px;
+    margin-top: 16px;
+  }
+  
+  .video-sidebar__list {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .video-sidebar__title {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+}
+
+/* YouTube-like dark mode support */
+@media (prefers-color-scheme: light) {
+  .video-sidebar {
+    background-color: transparent;
+  }
+  
+  .video-sidebar__title {
+    color: #0f0f0f;
+  }
+  
+  .video-sidebar__empty {
+    color: #606060;
+  }
+  
+  .video-card--compact:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+}
