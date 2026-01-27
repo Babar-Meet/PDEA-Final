@@ -105,7 +105,7 @@ const CategoryPage = ({ videos, categories }) => {
       </div>
 
       {/* Subcategories */}
-      {subcategories.length > 0 && (
+      {/* {subcategories.length > 0 && (
         <div className="subcategories-section">
           <h3>Subfolders</h3>
           <div className="subcategories-grid">
@@ -124,7 +124,7 @@ const CategoryPage = ({ videos, categories }) => {
             ))}
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Videos */}
       <div className="category-videos">
