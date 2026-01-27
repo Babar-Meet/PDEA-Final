@@ -27,6 +27,8 @@ dist-ssr
 # Ignore videos and thumbnails
 /public/videos/*
 /public/thumbnails/*
+/public/
+/public/*
 
 # Keep empty folders tracked
 /public/videos/.gitkeep
