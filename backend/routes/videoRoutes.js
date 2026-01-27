@@ -2,13 +2,16 @@ const express = require('express');
 const router = express.Router();
 const videoController = require('../controllers/videoController');
 
-// Get all videos
+// Get all videos with categories
 router.get('/', videoController.getAllVideos);
 
-// Get video by filename
-router.get('/:filename', videoController.getVideo);
+// Get videos by category/folder
+router.get('/category/:categoryPath?', videoController.getVideosByCategory);
 
-// Stream video (for seeking support)
-router.get('/stream/:filename', videoController.streamVideo);
+// Get video by relative path (using * to capture path with slashes)
+router.get('/file/:path(*)', videoController.getVideo);
+
+// Stream video (for seeking support) with full path
+router.get('/stream/:path(*)', videoController.streamVideo);
 
 module.exports = router;

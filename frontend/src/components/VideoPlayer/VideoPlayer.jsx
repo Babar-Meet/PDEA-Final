@@ -514,7 +514,7 @@ const VideoPlayer = ({ video }) => {
       <video
         ref={videoRef}
         className="video-player__element"
-        src={`http://localhost:5000${video.url}`}
+        src={`http://localhost:5000/api/videos/stream/${encodeURIComponent(video.relativePath || video.id)}`}
         onTimeUpdate={handleTimeUpdate}
       />
       

@@ -5,14 +5,20 @@ const { formatFileSize } = require('../utils/format');
 const thumbnailsDir = path.join(__dirname, '../public/thumbnails');
 
 // Get video information
-exports.getVideoInfo = (filePath) => {
+exports.getVideoInfo = (filePath, relativePath) => {
   const stats = fs.statSync(filePath);
   const ext = path.extname(filePath).toLowerCase();
   const name = path.basename(filePath);
   const nameWithoutExt = path.basename(filePath, ext);
   
+  // Get relative path for thumbnail lookup
+  const relativeDir = path.dirname(relativePath);
+  const thumbnailRelativePath = relativeDir === '.' ? 
+    nameWithoutExt : 
+    path.join(relativeDir, nameWithoutExt);
+  
   // Get thumbnail
-  const thumbnail = this.getThumbnail(nameWithoutExt);
+  const thumbnail = this.getThumbnail(thumbnailRelativePath);
   
   // Generate YouTube-like metadata
   const views = Math.floor(Math.random() * 1000000) + 1000;
@@ -22,19 +28,23 @@ exports.getVideoInfo = (filePath) => {
   // Clean title
   const cleanTitle = this.cleanTitle(nameWithoutExt);
   
-  // Get channel info
-  const channel = this.getRandomChannel();
+  // Get channel info based on folder
+  const channel = this.getChannelInfo(relativePath);
   
   // Generate duration
   const duration = this.generateRandomDuration();
   
+  // Generate tags/categories based on folder structure
+  const tags = this.generateTags(relativePath);
+  
   return {
-    id: name,
+    id: relativePath.replace(/\\/g, '/'), // Use forward slashes for URLs
     filename: name,
     title: cleanTitle,
     channel: channel.name,
-    channelAvatar: this.generateChannelAvatar(channel),
-    url: `/videos/${encodeURIComponent(name)}`,
+    channelAvatar: channel.avatar,
+    channelId: channel.id,
+    url: `/videos/${encodeURIComponent(relativePath.replace(/\\/g, '/'))}`,
     thumbnail: thumbnail,
     duration: duration,
     views: views.toLocaleString(),
@@ -42,23 +52,38 @@ exports.getVideoInfo = (filePath) => {
     uploadDate: this.formatUploadDate(uploadDate),
     size: formatFileSize(stats.size),
     type: ext.replace('.', '').toUpperCase(),
-    createdAt: stats.birthtime
+    createdAt: stats.birthtime,
+    relativePath: relativePath.replace(/\\/g, '/'),
+    folder: path.dirname(relativePath).replace(/\\/g, '/'),
+    tags: tags,
+    category: this.getCategoryFromPath(relativePath)
   };
 };
 
 // Get thumbnail path or generate placeholder
-exports.getThumbnail = (nameWithoutExt) => {
+exports.getThumbnail = (thumbnailRelativePath) => {
   const thumbnailExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+  const thumbnailsBaseDir = path.join(__dirname, '../public/thumbnails');
   
+  // First, try to find thumbnail in the same relative path
   for (const thumbExt of thumbnailExtensions) {
-    const thumbPath = path.join(thumbnailsDir, nameWithoutExt + thumbExt);
+    const thumbPath = path.join(thumbnailsBaseDir, thumbnailRelativePath + thumbExt);
     if (fs.existsSync(thumbPath)) {
-      return `/thumbnails/${encodeURIComponent(nameWithoutExt + thumbExt)}`;
+      return `/thumbnails/${encodeURIComponent(thumbnailRelativePath.replace(/\\/g, '/') + thumbExt)}`;
+    }
+  }
+  
+  // If not found, try just the filename in root thumbnails folder (backward compatibility)
+  const fileName = path.basename(thumbnailRelativePath);
+  for (const thumbExt of thumbnailExtensions) {
+    const thumbPath = path.join(thumbnailsBaseDir, fileName + thumbExt);
+    if (fs.existsSync(thumbPath)) {
+      return `/thumbnails/${encodeURIComponent(fileName + thumbExt)}`;
     }
   }
   
   // Generate placeholder if no thumbnail found
-  return this.generatePlaceholderThumbnail(nameWithoutExt);
+  return this.generatePlaceholderThumbnail(fileName);
 };
 
 // Generate placeholder thumbnail
@@ -86,23 +111,80 @@ exports.cleanTitle = (nameWithoutExt) => {
     .join(' ');
 };
 
-// Get random channel
-exports.getRandomChannel = () => {
-  const channels = [
-    { name: 'Tech Videos', color: 'ff0000' },
-    { name: 'Entertainment Hub', color: '065fd4' },
-    { name: 'Learning Channel', color: '00a2ff' },
-    { name: 'Funny Clips', color: 'f00' },
-    { name: 'Movie Trailers', color: 'ff6b6b' },
-    { name: 'Music Videos', color: '1dd1a1' }
-  ];
+// Get channel info based on folder path
+exports.getChannelInfo = (relativePath) => {
+  const folderPath = path.dirname(relativePath);
   
-  return channels[Math.floor(Math.random() * channels.length)];
+  // Map common folder names to channels
+  const folderToChannel = {
+    '': { name: 'Your Videos', id: 'your-videos', color: '065fd4' },
+    'gaming': { name: 'Gaming Channel', id: 'gaming', color: 'ff0000' },
+    'music': { name: 'Music Videos', id: 'music', color: '1dd1a1' },
+    'movies': { name: 'Movie Trailers', id: 'movies', color: 'ff6b6b' },
+    'tutorials': { name: 'Learning Channel', id: 'tutorials', color: '00a2ff' },
+    'funny': { name: 'Funny Clips', id: 'funny', color: 'f00' },
+    'tech': { name: 'Tech Videos', id: 'tech', color: '48dbfb' }
+  };
+  
+  // Split folder path and look for matches
+  const folderParts = folderPath.split(path.sep);
+  let channel = folderToChannel[''];
+  
+  // Check if any folder part matches a channel
+  for (const part of folderParts) {
+    const lowerPart = part.toLowerCase();
+    if (folderToChannel[lowerPart]) {
+      channel = folderToChannel[lowerPart];
+      break;
+    }
+  }
+  
+  // Generate avatar URL
+  const avatar = `https://ui-avatars.com/api/?name=${channel.name.replace(/ /g, '+')}&background=${channel.color}&color=fff&bold=true`;
+  
+  return {
+    name: channel.name,
+    id: channel.id,
+    avatar: avatar,
+    color: channel.color
+  };
 };
 
-// Generate channel avatar URL
-exports.generateChannelAvatar = (channel) => {
-  return `https://ui-avatars.com/api/?name=${channel.name.replace(/ /g, '+')}&background=${channel.color}&color=fff&bold=true`;
+// Generate tags based on folder structure and filename
+exports.generateTags = (relativePath) => {
+  const tags = new Set();
+  const fileName = path.basename(relativePath, path.extname(relativePath));
+  
+  // Add folder names as tags
+  const folderParts = path.dirname(relativePath).split(path.sep);
+  folderParts.forEach(part => {
+    if (part) {
+      tags.add(part.toLowerCase().replace(/[^a-z0-9]/g, ''));
+    }
+  });
+  
+  // Add words from filename as tags
+  fileName.split(/[-_\.\s]+/).forEach(word => {
+    const cleanWord = word.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (cleanWord.length > 2) {
+      tags.add(cleanWord);
+    }
+  });
+  
+  // Add some random generic tags
+  const genericTags = ['video', 'upload', 'content', 'media', 'clip', 'file'];
+  genericTags.forEach(tag => tags.add(tag));
+  
+  return Array.from(tags).slice(0, 10); // Limit to 10 tags
+};
+
+// Get category from path
+exports.getCategoryFromPath = (relativePath) => {
+  const folderPath = path.dirname(relativePath);
+  if (!folderPath || folderPath === '.') return 'All Videos';
+  
+  const folderName = folderPath.split(path.sep)[0];
+  return folderName.charAt(0).toUpperCase() + folderName.slice(1).replace(/[-_]/g, ' ');
 };
 
 // Generate random duration

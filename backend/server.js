@@ -15,14 +15,14 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Ensure directories exist
-const videosDir = path.join(__dirname, 'public', 'videos');
-const thumbnailsDir = path.join(__dirname, 'public', 'thumbnails');
-if (!fs.existsSync(videosDir)) fs.mkdirSync(videosDir, { recursive: true });
+// Ensure public directory exists
+const publicDir = path.join(__dirname, 'public');
+const thumbnailsDir = path.join(publicDir, 'thumbnails');
+if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
 if (!fs.existsSync(thumbnailsDir)) fs.mkdirSync(thumbnailsDir, { recursive: true });
 
 // Serve static files
-app.use('/videos', express.static(videosDir));
+app.use('/public', express.static(publicDir));
 app.use('/thumbnails', express.static(thumbnailsDir));
 
 // Use routes
@@ -32,6 +32,6 @@ app.use('/api/health', healthRoutes);
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running: http://localhost:${PORT}`);
-  console.log(`📁 Videos: ${videosDir}`);
+  console.log(`📁 Public directory: ${publicDir}`);
   console.log(`🖼️  Thumbnails: ${thumbnailsDir}`);
 });

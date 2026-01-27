@@ -207,3 +207,62 @@
     justify-content: center;
   }
 }
+/* Add these to your existing Watch.css */
+
+.watch__meta {
+  margin-bottom: 16px;
+}
+
+.watch__folder {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 14px;
+  color: #aaaaaa;
+}
+
+.folder-label {
+  font-weight: 600;
+}
+
+.folder-path {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.watch__category {
+  background: rgba(62, 166, 255, 0.1);
+  color: #3ea6ff;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.watch__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.watch__tags .tag {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.watch__tags .tag:hover {
+  background: rgba(255, 255, 255, 0.2);
+}

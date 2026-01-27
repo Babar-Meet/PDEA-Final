@@ -12,39 +12,69 @@ import {
   Trophy,
   ShoppingBag,
   Settings,
+  Film,
+  FolderOpen,
+  ListVideo
 } from 'lucide-react'
 import './Sidebar.css'
 
-const Sidebar = ({ size }) => {
+const Sidebar = ({ size, categories, videos }) => {
   const location = useLocation()
 
-   const mainItems = [
+  const mainItems = [
     { icon: <Home size={24} />, label: 'Home', path: '/' }
   ]
 
-  const categoryItems = [
-    { icon: <Gamepad2 size={24} />, label: 'Gaming', path: '/category/gaming' },
-    { icon: <Music size={24} />, label: 'Learning', path: '/category/learning' },
-    { icon: <Trophy size={24} />, label: 'Science', path: '/category/science' },
-  ]
+  // Get top 5 categories based on video count
+  const topCategories = categories?.slice(0, 5) || []
+
+  // Count videos by folder/category
+  const getCategoryCount = (categoryPath) => {
+    if (!videos) return 0
+    return videos.filter(video => {
+      if (!categoryPath) return !video.folder || video.folder === ''
+      return video.folder === categoryPath || video.folder?.startsWith(categoryPath + '/')
+    }).length
+  }
+
+  // Get popular folders (folders with most videos)
+  const getPopularFolders = () => {
+    if (!videos) return []
+    
+    const folderCounts = {}
+    videos.forEach(video => {
+      if (video.folder) {
+        folderCounts[video.folder] = (folderCounts[video.folder] || 0) + 1
+      }
+    })
+    
+    return Object.entries(folderCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([folder, count]) => ({
+        name: folder.split('/').pop(),
+        path: folder,
+        count: count
+      }))
+  }
+
+  const popularFolders = getPopularFolders()
 
   const subscriptions = [
-    { icon: <Folder size={24} />, label: 'Channel 1', path: '/channel/1' },
-    { icon: <Folder size={24} />, label: 'Channel 2', path: '/channel/2' },
-    { icon: <Folder size={24} />, label: 'Channel 3', path: '/channel/3' },
+    { icon: <Folder size={24} />, label: 'My Videos', path: '/category/' },
+    { icon: <Film size={24} />, label: 'All Videos', path: '/category/all' },
   ]
 
-  const playlistItems = [
-    { icon: <PlaySquare size={24} />, label: 'Playlist 1', path: '/playlist/1' },
-    { icon: <PlaySquare size={24} />, label: 'Playlist 2', path: '/playlist/2' },
-  ]
-
+  const playlistItems = popularFolders.map((folder, index) => ({
+    icon: <FolderOpen size={24} />,
+    label: `${folder.name} (${folder.count})`,
+    path: `/category/${encodeURIComponent(folder.path)}`
+  }))
 
   const moreOptions = [
     { icon: <Clock size={24} />, label: 'History', path: '/history' },
-    { icon: <ThumbsUp size={24} />, label: 'Recycle Bin', path: '/recycle-bin' },
-    { icon: <Settings size={24} />, label: 'Videoplayer Settings', path: '/VideoplayerSettings' },
-    { icon: <Settings size={24} />, label: 'Settings', path: '/settings' },
+    { icon: <ThumbsUp size={24} />, label: 'Liked Videos', path: '/liked' },
+    { icon: <Settings size={24} />, label: 'Player Settings', path: '/VideoplayerSettings' },
   ]
 
   return (
@@ -70,10 +100,49 @@ const Sidebar = ({ size }) => {
 
         <div className="sidebar__divider" />
 
+        {/* Categories Section - Dynamic */}
         <div className="sidebar__section">
           <h3 className="sidebar__title">Categories</h3>
-          {categoryItems.map((item, index) => (
-            <Link key={index} to={item.path} className="sidebar__item">
+          {topCategories.map((category, index) => (
+            <Link 
+              key={index} 
+              to={`/category/${encodeURIComponent(category.path)}`}
+              className={`sidebar__item ${location.pathname === `/category/${category.path}` ? 'active' : ''}`}
+            >
+              <span className="sidebar__icon">
+                <Gamepad2 size={24} />
+              </span>
+              <div className="sidebar__label-wrapper">
+                <span className="sidebar__label">{category.displayName}</span>
+                <span className="sidebar__count">{category.count}</span>
+              </div>
+            </Link>
+          ))}
+          
+          {categories?.length > 5 && (
+            <Link 
+              to="/categories" 
+              className="sidebar__item sidebar__view-all"
+            >
+              <span className="sidebar__icon">
+                <ListVideo size={24} />
+              </span>
+              <span className="sidebar__label">View All Categories</span>
+            </Link>
+          )}
+        </div>
+
+        <div className="sidebar__divider" />
+
+        {/* Subscriptions Section */}
+        <div className="sidebar__section">
+          <h3 className="sidebar__title">Library</h3>
+          {subscriptions.map((item, index) => (
+            <Link
+              key={index} 
+              to={item.path}   
+              className={`sidebar__item ${location.pathname === item.path ? 'active' : ''}`}
+            >
               <span className="sidebar__icon">{item.icon}</span>
               <span className="sidebar__label">{item.label}</span>
             </Link>
@@ -82,40 +151,26 @@ const Sidebar = ({ size }) => {
 
         <div className="sidebar__divider" />
 
-      <div className="sidebar__section">
-        <h3 className="sidebar__title">Subscriptions</h3>
-        {subscriptions.map((item, index) => (
-          <Link
-            key={index} 
-            to={item.path}   
-            className={`sidebar__item ${location.pathname === item.path ? 'active' : ''}`}
-          >
-            <span className="sidebar__icon">{item.icon}</span>
-            <span className="sidebar__label">{item.label}</span>
-          </Link>
-        ))}
-      </div>
-
-      <div className="sidebar__divider" />
-
-      
-      <div className="sidebar__section">
-        <h3 className="sidebar__title">Playlists</h3>
-        {playlistItems.map((item, index) => (
-          <Link
-            key={index}
-            to={item.path}   
-            className={`sidebar__item ${location.pathname === item.path ? 'active' : ''}`}
-          >
-            <span className="sidebar__icon">{item.icon}</span>
-            <span className="sidebar__label">{item.label}</span>
-          </Link>
-        ))}
-      </div>
-
+        {/* Popular Folders Section */}
+        <div className="sidebar__section">
+          <h3 className="sidebar__title">Popular Folders</h3>
+          {playlistItems.map((item, index) => (
+            <Link
+              key={index}
+              to={item.path}   
+              className={`sidebar__item ${location.pathname === item.path ? 'active' : ''}`}
+            >
+              <span className="sidebar__icon">{item.icon}</span>
+              <div className="sidebar__label-wrapper">
+                <span className="sidebar__label">{item.label}</span>
+              </div>
+            </Link>
+          ))}
+        </div>
 
         <div className="sidebar__divider" />
 
+        {/* More Options */}
         <div className="sidebar__section">
           {moreOptions.map((item, index) => (
             <Link key={index} to={item.path} className="sidebar__item">

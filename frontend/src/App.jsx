@@ -5,12 +5,14 @@ import Header from './components/Header/Header'
 import Sidebar from './components/Sidebar/Sidebar'
 import Home from './pages/Home/Home'
 import Watch from './pages/Watch/Watch'
+import CategoryPage from './pages/CategoryPage/CategoryPage'
 import VideoplayerSettings from './components/VideoplayerSettings/VideoplayerSettings'
 import './App.css'
 
 function App() {
   const [sidebarSize, setSidebarSize] = useState('large')
   const [videos, setVideos] = useState([])
+  const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -24,14 +26,19 @@ function App() {
       const data = await response.json()
       
       if (data.success) {
+        // Process videos with full URLs for thumbnails and streaming
         const videosWithFullUrls = data.videos.map(video => ({
           ...video,
+          // For streaming, use the API endpoint with relative path
+          url: video.url || `/api/videos/stream/${encodeURIComponent(video.relativePath || video.id)}`,
+          // For thumbnails, use full URL if they're local
           thumbnail: video.thumbnail.startsWith('/') 
             ? `http://localhost:5000${video.thumbnail}`
             : video.thumbnail
         }))
         
         setVideos(videosWithFullUrls)
+        setCategories(data.categories || [])
       }
     } catch (error) {
       console.error('Error fetching videos:', error)
@@ -47,17 +54,45 @@ function App() {
   }
 
   return (
-    <VideoPlayerSettingsProvider> {/* Wrap everything */}
+    <VideoPlayerSettingsProvider>
       <Router>
         <div className="app">
           <Header toggleSidebar={toggleSidebar} />
           <div className="app__main">
-            <Sidebar size={sidebarSize} />
+            <Sidebar 
+              size={sidebarSize} 
+              categories={categories}
+              videos={videos}
+            />
             <div className={`app__content ${sidebarSize === 'large' ? 'sidebar-open' : ''}`}>
               <Routes>
-                <Route path="/" element={<Home videos={videos} loading={loading} />} />
-                <Route path="/watch/:id" element={<Watch videos={videos} />} />
-                <Route path="/VideoplayerSettings" element={<VideoplayerSettings />} />
+                <Route 
+                  path="/" 
+                  element={
+                    <Home 
+                      videos={videos} 
+                      categories={categories} 
+                      loading={loading} 
+                    />
+                  } 
+                />
+                <Route 
+                  path="/watch/:id" 
+                  element={<Watch videos={videos} />} 
+                />
+                <Route 
+                  path="/VideoplayerSettings" 
+                  element={<VideoplayerSettings />} 
+                />
+                <Route 
+                  path="/category/:categoryPath?" 
+                  element={
+                    <CategoryPage 
+                      videos={videos} 
+                      categories={categories} 
+                    />
+                  } 
+                />
               </Routes>
             </div>
           </div>

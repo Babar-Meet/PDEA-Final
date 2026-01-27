@@ -11,6 +11,7 @@ const Watch = ({ videos }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Find video by id (which is now the relative path)
     const foundVideo = videos.find(v => v.id === id)
     if (foundVideo) {
       setVideo(foundVideo)
@@ -30,9 +31,14 @@ const Watch = ({ videos }) => {
     return (
       <div className="watch__not-found">
         <h2>Video not found</h2>
+        <p>The video might have been moved or deleted.</p>
       </div>
     )
   }
+
+  // Format category display
+  const categoryDisplay = video.category || 'Uncategorized'
+  const folderPath = video.folder ? video.folder.split('/').filter(Boolean).join(' / ') : ''
 
   return (
     <div className="watch">
@@ -44,9 +50,21 @@ const Watch = ({ videos }) => {
         <div className="watch__details">
           <h1 className="watch__title">{video.title}</h1>
           
-          <div className="watch__stats">
-            <span className="watch__views">{video.views} views</span>
-            <span className="watch__date">{video.uploadDate}</span>
+          <div className="watch__meta">
+            <div className="watch__stats">
+              <span className="watch__views">{video.views} views</span>
+              <span className="watch__date">{video.uploadDate}</span>
+              {video.category && (
+                <span className="watch__category">{categoryDisplay}</span>
+              )}
+            </div>
+            
+            {folderPath && (
+              <div className="watch__folder">
+                <span className="folder-label">Folder:</span>
+                <span className="folder-path">{folderPath}</span>
+              </div>
+            )}
           </div>
           
           <div className="watch__actions">
@@ -88,7 +106,14 @@ const Watch = ({ videos }) => {
             </div>
             
             <div className="watch__description">
-              <p>{video.filename} • {video.size}</p>
+              <p>{video.filename} • {video.size} • {video.type}</p>
+              {video.tags && video.tags.length > 0 && (
+                <div className="watch__tags">
+                  {video.tags.slice(0, 5).map((tag, index) => (
+                    <span key={index} className="tag">{tag}</span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
