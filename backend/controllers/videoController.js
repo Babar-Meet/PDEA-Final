@@ -18,10 +18,8 @@ function findVideoFiles(dir, basePath = '', results = []) {
     const relativePath = path.join(basePath, file.name);
     
     if (file.isDirectory()) {
-      // Recursively search in subdirectories (except thumbnails and trash directories)
-      if (!['thumbnails', 'trash'].includes(file.name)) {
-        findVideoFiles(fullPath, relativePath, results);
-      }
+      // Recursively search in subdirectories
+      findVideoFiles(fullPath, relativePath, results);
     } else {
       const ext = path.extname(file.name).toLowerCase();
       if (videoExtensions.includes(ext)) {
@@ -51,7 +49,9 @@ exports.getAllVideos = async (req, res) => {
     }
 
     // Find all video files in the public directory (excluding trash)
-    const videoFiles = findVideoFiles(publicDir);
+    const videoFiles = findVideoFiles(publicDir).filter(video => {
+      return !video.absolutePath.includes(trashDir);
+    });
     
     // Get video info for each file
     const videos = videoFiles.map(videoFile => {
@@ -172,14 +172,14 @@ exports.streamVideo = async (req, res) => {
         'Content-Range': `bytes ${start}-${end}/${fileSize}`,
         'Accept-Ranges': 'bytes',
         'Content-Length': chunksize,
-        'Content-Type': this.getContentType(path.extname(filePath)),
+        'Content-Type': exports.getContentType(path.extname(filePath)),
       };
       res.writeHead(206, head);
       file.pipe(res);
     } else {
       const head = {
         'Content-Length': fileSize,
-        'Content-Type': this.getContentType(path.extname(filePath)),
+        'Content-Type': exports.getContentType(path.extname(filePath)),
       };
       res.writeHead(200, head);
       fs.createReadStream(filePath).pipe(res);
@@ -212,8 +212,10 @@ exports.getVideosByCategory = async (req, res) => {
   try {
     const categoryPath = decodeURIComponent(req.params.categoryPath || '');
     
-    // Find all video files in the public directory
-    const videoFiles = findVideoFiles(publicDir);
+    // Find all video files in the public directory (excluding trash)
+    const videoFiles = findVideoFiles(publicDir).filter(video => {
+      return !video.absolutePath.includes(trashDir);
+    });
     
     // Filter videos by category/folder
     const categoryVideos = videoFiles
@@ -279,7 +281,7 @@ exports.moveToTrash = async (req, res) => {
     // Move video file to trash
     fs.renameSync(videoPath, trashVideoPath);
     
-    // Try to find and move thumbnail if it exists
+    // We're NOT moving thumbnails anymore - just delete them
     const thumbnailExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
     const nameWithoutExt = path.basename(relativePath, path.extname(relativePath));
     const relativeDir = path.dirname(relativePath);
@@ -287,28 +289,26 @@ exports.moveToTrash = async (req, res) => {
       nameWithoutExt : 
       path.join(relativeDir, nameWithoutExt);
     
-    let thumbnailMoved = false;
+    let thumbnailDeleted = false;
     
-    // First, try to find thumbnail in the same relative path
+    // Try to delete thumbnail if it exists
     for (const thumbExt of thumbnailExtensions) {
       const thumbPath = path.join(thumbnailsDir, thumbnailRelativePath + thumbExt);
       if (fs.existsSync(thumbPath)) {
-        const trashThumbPath = path.join(trashDir, `thumbnail_${videoFilename}${thumbExt}`);
-        fs.renameSync(thumbPath, trashThumbPath);
-        thumbnailMoved = true;
+        fs.unlinkSync(thumbPath);
+        thumbnailDeleted = true;
         break;
       }
     }
     
     // If not found, try just the filename in root thumbnails folder
-    if (!thumbnailMoved) {
+    if (!thumbnailDeleted) {
       const fileName = path.basename(thumbnailRelativePath);
       for (const thumbExt of thumbnailExtensions) {
         const thumbPath = path.join(thumbnailsDir, fileName + thumbExt);
         if (fs.existsSync(thumbPath)) {
-          const trashThumbPath = path.join(trashDir, `thumbnail_${videoFilename}${thumbExt}`);
-          fs.renameSync(thumbPath, trashThumbPath);
-          thumbnailMoved = true;
+          fs.unlinkSync(thumbPath);
+          thumbnailDeleted = true;
           break;
         }
       }
@@ -317,7 +317,7 @@ exports.moveToTrash = async (req, res) => {
     res.json({ 
       success: true, 
       message: 'Video moved to trash successfully',
-      thumbnailMoved: thumbnailMoved
+      thumbnailDeleted: thumbnailDeleted
     });
     
   } catch (error) {
@@ -393,9 +393,7 @@ exports.deletePermanently = async (req, res) => {
   }
 };
 
-// Add these new functions to the existing videoController.js
-
-// Get all videos in trash
+// Get all videos in trash (SIMPLIFIED - just list files)
 exports.getTrashVideos = async (req, res) => {
   try {
     if (!fs.existsSync(trashDir)) {
@@ -406,16 +404,31 @@ exports.getTrashVideos = async (req, res) => {
       });
     }
 
-    // Find all video files in the trash directory
-    const videoFiles = findVideoFiles(trashDir, '', []); // Pass empty basePath for trash
+    // Get all files in trash directory
+    const files = fs.readdirSync(trashDir);
     
-    // Get video info for each file
-    const videos = videoFiles.map(videoFile => {
-      const info = videoService.getVideoInfo(videoFile.absolutePath, videoFile.relativePath);
+    // Filter for video files only
+    const videoFiles = files.filter(file => {
+      const ext = path.extname(file).toLowerCase();
+      return videoExtensions.includes(ext);
+    });
+    
+    // Create simple video info (no thumbnails)
+    const videos = videoFiles.map(filename => {
+      const filePath = path.join(trashDir, filename);
+      const stats = fs.statSync(filePath);
+      const ext = path.extname(filename).toLowerCase();
+      const nameWithoutExt = path.basename(filename, ext);
+      
       return {
-        ...info,
-        originalPath: this.getOriginalPathFromTrash(videoFile.filename),
-        deletedDate: fs.statSync(videoFile.absolutePath).mtime,
+        id: `trash:${filename}`,
+        filename: filename,
+        title: nameWithoutExt.replace(/[-_]/g, ' ').split(' ')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' '),
+        size: formatFileSize(stats.size),
+        type: ext.replace('.', '').toUpperCase(),
+        deletedDate: stats.mtime,
         inTrash: true
       };
     });
@@ -433,15 +446,6 @@ exports.getTrashVideos = async (req, res) => {
       error: 'Failed to load trash videos' 
     });
   }
-};
-
-// Helper to reconstruct original path from trash filename
-exports.getOriginalPathFromTrash = (filename) => {
-  // Remove "thumbnail_" prefix if exists
-  const cleanName = filename.replace(/^thumbnail_/, '');
-  // Try to find original path based on naming pattern
-  // You might need to store original path in a separate file when moving to trash
-  return cleanName;
 };
 
 // Empty trash (delete all files in trash folder)
@@ -486,51 +490,10 @@ exports.emptyTrash = async (req, res) => {
   }
 };
 
-// Restore video from trash
-exports.restoreFromTrash = async (req, res) => {
-  try {
-    const filename = decodeURIComponent(req.params.filename);
-    const trashPath = path.join(trashDir, filename);
-    
-    if (!fs.existsSync(trashPath)) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'File not found in trash' 
-      });
-    }
-
-    // Try to restore to original location (you'll need to store original path)
-    // For now, restore to public root
-    const originalPath = path.join(publicDir, filename);
-    
-    // Check if file already exists at destination
-    if (fs.existsSync(originalPath)) {
-      // Add timestamp to avoid conflict
-      const timestamp = Date.now();
-      const name = path.basename(filename, path.extname(filename));
-      const ext = path.extname(filename);
-      const newName = `${name}_restored_${timestamp}${ext}`;
-      const newPath = path.join(publicDir, newName);
-      fs.renameSync(trashPath, newPath);
-      
-      res.json({ 
-        success: true, 
-        message: 'File restored with new name to avoid conflict',
-        newPath: newName
-      });
-    } else {
-      fs.renameSync(trashPath, originalPath);
-      res.json({ 
-        success: true, 
-        message: 'File restored successfully' 
-      });
-    }
-    
-  } catch (error) {
-    console.error('Error restoring from trash:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to restore file' 
-    });
-  }
-};
+// Helper function to format file size (copied from format.js)
+function formatFileSize(bytes = 0) {
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1024 ** 2) return (bytes / 1024).toFixed(1) + ' KB'
+  if (bytes < 1024 ** 3) return (bytes / 1024 ** 2).toFixed(1) + ' MB'
+  return (bytes / 1024 ** 3).toFixed(1) + ' GB'
+}

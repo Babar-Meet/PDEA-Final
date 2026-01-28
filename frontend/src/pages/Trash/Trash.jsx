@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Trash2, RefreshCw, AlertTriangle, Undo, Play } from 'lucide-react'
-import VideoCard from '../../components/VideoCard/VideoCard'
+import { Trash2, RefreshCw, AlertTriangle, FileVideo, Play, ExternalLink } from 'lucide-react'
 import './Trash.css'
 
 const Trash = ({ fetchVideos }) => {
@@ -17,16 +16,7 @@ const Trash = ({ fetchVideos }) => {
       const data = await response.json()
       
       if (data.success) {
-        // Process videos with full URLs for thumbnails
-        const videosWithUrls = data.videos.map(video => ({
-          ...video,
-          url: `http://localhost:5000/trash/${encodeURIComponent(video.filename)}`,
-          thumbnail: video.thumbnail.startsWith('/') 
-            ? `http://localhost:5000${video.thumbnail}`
-            : video.thumbnail
-        }))
-        
-        setTrashVideos(videosWithUrls)
+        setTrashVideos(data.videos)
       }
     } catch (error) {
       console.error('Error fetching trash videos:', error)
@@ -67,25 +57,23 @@ const Trash = ({ fetchVideos }) => {
     }
   }
 
-  const handleRestore = async (filename) => {
-    try {
-      const response = await fetch(`http://localhost:5000/api/videos/trash/restore/${encodeURIComponent(filename)}`, {
-        method: 'POST'
-      })
-      
-      const data = await response.json()
-      
-      if (data.success) {
-        alert('Video restored successfully!')
-        fetchTrashVideos()
-        if (fetchVideos) fetchVideos()
-      } else {
-        alert('Failed to restore video: ' + data.error)
-      }
-    } catch (error) {
-      console.error('Error restoring video:', error)
-      alert('Error restoring video')
-    }
+  // Function to open video in default media player
+  const openInMediaPlayer = (filename) => {
+    // Get the full path to the trash video
+    const videoUrl = `http://localhost:5000/trash/${encodeURIComponent(filename)}`
+    
+    // Create a temporary link to download/play the video
+    const link = document.createElement('a')
+    link.href = videoUrl
+    link.target = '_blank'
+    link.rel = 'noopener noreferrer'
+    link.click()
+  }
+
+  // Function to watch video in browser
+  const watchInBrowser = (filename) => {
+    const videoUrl = `http://localhost:5000/trash/${encodeURIComponent(filename)}`
+    window.open(videoUrl, '_blank')
   }
 
   if (loading) {
@@ -145,12 +133,12 @@ const Trash = ({ fetchVideos }) => {
           <AlertTriangle size={20} />
           <div className="warning-content">
             <strong>Videos in trash will be deleted permanently when you empty the trash.</strong>
-            <span>Deleted videos are not counted in storage.</span>
+            <span>Watch videos before emptying to make sure you don't need them.</span>
           </div>
         </div>
       )}
 
-      {/* Video Grid */}
+      {/* Video List */}
       <div className="trash-content">
         {trashVideos.length === 0 ? (
           <div className="trash-empty">
@@ -167,49 +155,52 @@ const Trash = ({ fetchVideos }) => {
         ) : (
           <>
             <div className="trash-videos-header">
-              <h3>Videos in Trash</h3>
+              <h3>Videos in Trash ({trashVideos.length})</h3>
               <div className="trash-instructions">
-                <span>Click on a video to watch it from trash</span>
-                <span>• Right-click for restore options</span>
+                <span>Watch videos before emptying trash. Once emptied, videos are permanently deleted.</span>
               </div>
             </div>
             
-            <div className="trash-videos-grid">
+            <div className="trash-videos-list">
               {trashVideos.map((video) => (
                 <div key={video.id} className="trash-video-item">
-                  <div 
-                    className="trash-video-thumbnail"
-                    onClick={() => window.open(video.url, '_blank')}
-                  >
-                    <img src={video.thumbnail} alt={video.title} />
-                    <div className="thumbnail-overlay">
-                      <Play size={24} />
-                    </div>
-                    <div className="trash-badge">TRASH</div>
+                  <div className="trash-video-icon">
+                    <FileVideo size={24} />
                   </div>
                   
                   <div className="trash-video-info">
                     <h4 className="trash-video-title" title={video.title}>
-                      {video.title.length > 40 ? video.title.substring(0, 40) + '...' : video.title}
+                      {video.title}
                     </h4>
                     <div className="trash-video-details">
-                      <span>{video.size}</span>
-                      <span>•</span>
-                      <span>{video.type}</span>
-                    </div>
-                    <div className="trash-video-actions">
-                      <button 
-                        className="restore-btn"
-                        onClick={() => handleRestore(video.filename)}
-                        title="Restore to original location"
-                      >
-                        <Undo size={14} />
-                        Restore
-                      </button>
-                      <span className="delete-date">
-                        Deleted: {new Date(video.deletedDate || video.createdAt).toLocaleDateString()}
+                      <span className="trash-video-filename" title={video.filename}>
+                        {video.filename}
                       </span>
+                      <span className="trash-video-size">{video.size}</span>
+                      <span className="trash-video-type">{video.type}</span>
                     </div>
+                    <div className="trash-video-date">
+                      <span>Deleted: {new Date(video.deletedDate).toLocaleDateString()} {new Date(video.deletedDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="trash-video-actions">
+                    <button 
+                      className="watch-btn"
+                      onClick={() => watchInBrowser(video.filename)}
+                      title="Watch in browser"
+                    >
+                      <Play size={16} />
+                      Watch
+                    </button>
+                    <button 
+                      className="open-player-btn"
+                      onClick={() => openInMediaPlayer(video.filename)}
+                      title="Open in default media player"
+                    >
+                      <ExternalLink size={16} />
+                      Open in Player
+                    </button>
                   </div>
                 </div>
               ))}
