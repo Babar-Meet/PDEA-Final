@@ -4,6 +4,7 @@ const videoService = require('../services/videoService');
 
 const publicDir = path.join(__dirname, '../public');
 const thumbnailsDir = path.join(publicDir, 'thumbnails');
+const trashDir = path.join(publicDir, 'trash');
 
 // Supported video extensions
 const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv', '.flv', '.wmv', '.m4v'];
@@ -17,8 +18,8 @@ function findVideoFiles(dir, basePath = '', results = []) {
     const relativePath = path.join(basePath, file.name);
     
     if (file.isDirectory()) {
-      // Recursively search in subdirectories (except thumbnails directory)
-      if (file.name !== 'thumbnails') {
+      // Recursively search in subdirectories (except thumbnails and trash directories)
+      if (!['thumbnails', 'trash'].includes(file.name)) {
         findVideoFiles(fullPath, relativePath, results);
       }
     } else {
@@ -37,7 +38,7 @@ function findVideoFiles(dir, basePath = '', results = []) {
   return results;
 }
 
-// Get all videos from entire public directory
+// Get all videos from entire public directory (excluding trash)
 exports.getAllVideos = async (req, res) => {
   try {
     if (!fs.existsSync(publicDir)) {
@@ -49,7 +50,7 @@ exports.getAllVideos = async (req, res) => {
       });
     }
 
-    // Find all video files in the public directory
+    // Find all video files in the public directory (excluding trash)
     const videoFiles = findVideoFiles(publicDir);
     
     // Get video info for each file
@@ -249,6 +250,145 @@ exports.getVideosByCategory = async (req, res) => {
     res.status(500).json({ 
       success: false, 
       error: 'Failed to load category videos' 
+    });
+  }
+};
+
+// Move video to trash
+exports.moveToTrash = async (req, res) => {
+  try {
+    const relativePath = decodeURIComponent(req.params.path);
+    const videoPath = path.join(publicDir, relativePath);
+    
+    if (!fs.existsSync(videoPath)) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Video not found' 
+      });
+    }
+    
+    // Get video filename and create trash path
+    const videoFilename = path.basename(videoPath);
+    const trashVideoPath = path.join(trashDir, videoFilename);
+    
+    // Ensure trash directory exists
+    if (!fs.existsSync(trashDir)) {
+      fs.mkdirSync(trashDir, { recursive: true });
+    }
+    
+    // Move video file to trash
+    fs.renameSync(videoPath, trashVideoPath);
+    
+    // Try to find and move thumbnail if it exists
+    const thumbnailExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+    const nameWithoutExt = path.basename(relativePath, path.extname(relativePath));
+    const relativeDir = path.dirname(relativePath);
+    const thumbnailRelativePath = relativeDir === '.' ? 
+      nameWithoutExt : 
+      path.join(relativeDir, nameWithoutExt);
+    
+    let thumbnailMoved = false;
+    
+    // First, try to find thumbnail in the same relative path
+    for (const thumbExt of thumbnailExtensions) {
+      const thumbPath = path.join(thumbnailsDir, thumbnailRelativePath + thumbExt);
+      if (fs.existsSync(thumbPath)) {
+        const trashThumbPath = path.join(trashDir, `thumbnail_${videoFilename}${thumbExt}`);
+        fs.renameSync(thumbPath, trashThumbPath);
+        thumbnailMoved = true;
+        break;
+      }
+    }
+    
+    // If not found, try just the filename in root thumbnails folder
+    if (!thumbnailMoved) {
+      const fileName = path.basename(thumbnailRelativePath);
+      for (const thumbExt of thumbnailExtensions) {
+        const thumbPath = path.join(thumbnailsDir, fileName + thumbExt);
+        if (fs.existsSync(thumbPath)) {
+          const trashThumbPath = path.join(trashDir, `thumbnail_${videoFilename}${thumbExt}`);
+          fs.renameSync(thumbPath, trashThumbPath);
+          thumbnailMoved = true;
+          break;
+        }
+      }
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Video moved to trash successfully',
+      thumbnailMoved: thumbnailMoved
+    });
+    
+  } catch (error) {
+    console.error('Error moving video to trash:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to move video to trash' 
+    });
+  }
+};
+
+// Permanently delete video
+exports.deletePermanently = async (req, res) => {
+  try {
+    const relativePath = decodeURIComponent(req.params.path);
+    const videoPath = path.join(publicDir, relativePath);
+    
+    if (!fs.existsSync(videoPath)) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Video not found' 
+      });
+    }
+    
+    // Delete video file
+    fs.unlinkSync(videoPath);
+    
+    // Try to find and delete thumbnail if it exists
+    const thumbnailExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+    const nameWithoutExt = path.basename(relativePath, path.extname(relativePath));
+    const relativeDir = path.dirname(relativePath);
+    const thumbnailRelativePath = relativeDir === '.' ? 
+      nameWithoutExt : 
+      path.join(relativeDir, nameWithoutExt);
+    
+    let thumbnailDeleted = false;
+    
+    // First, try to find thumbnail in the same relative path
+    for (const thumbExt of thumbnailExtensions) {
+      const thumbPath = path.join(thumbnailsDir, thumbnailRelativePath + thumbExt);
+      if (fs.existsSync(thumbPath)) {
+        fs.unlinkSync(thumbPath);
+        thumbnailDeleted = true;
+        break;
+      }
+    }
+    
+    // If not found, try just the filename in root thumbnails folder
+    if (!thumbnailDeleted) {
+      const fileName = path.basename(thumbnailRelativePath);
+      for (const thumbExt of thumbnailExtensions) {
+        const thumbPath = path.join(thumbnailsDir, fileName + thumbExt);
+        if (fs.existsSync(thumbPath)) {
+          fs.unlinkSync(thumbPath);
+          thumbnailDeleted = true;
+          break;
+        }
+      }
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Video deleted permanently',
+      thumbnailDeleted: thumbnailDeleted
+    });
+    
+  } catch (error) {
+    console.error('Error deleting video:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to delete video' 
     });
   }
 };

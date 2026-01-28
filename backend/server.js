@@ -18,8 +18,11 @@ app.use(express.json());
 // Ensure public directory exists
 const publicDir = path.join(__dirname, 'public');
 const thumbnailsDir = path.join(publicDir, 'thumbnails');
-if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
-if (!fs.existsSync(thumbnailsDir)) fs.mkdirSync(thumbnailsDir, { recursive: true });
+const trashDir = path.join(publicDir, 'trash');
+
+[publicDir, thumbnailsDir, trashDir].forEach(dir => {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+});
 
 // Serve static files
 app.use('/public', express.static(publicDir));
@@ -34,4 +37,5 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running: http://localhost:${PORT}`);
   console.log(`📁 Public directory: ${publicDir}`);
   console.log(`🖼️  Thumbnails: ${thumbnailsDir}`);
+  console.log(`🗑️  Trash folder: ${trashDir}`);
 });

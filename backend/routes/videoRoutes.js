@@ -14,4 +14,10 @@ router.get('/file/:path(*)', videoController.getVideo);
 // Stream video (for seeking support) with full path
 router.get('/stream/:path(*)', videoController.streamVideo);
 
+// Move video to trash
+router.post('/trash/:path(*)', videoController.moveToTrash);
+
+// Permanently delete video
+router.delete('/delete/:path(*)', videoController.deletePermanently);
+
 module.exports = router;

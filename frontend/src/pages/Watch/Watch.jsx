@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import VideoPlayer from '../../components/VideoPlayer/VideoPlayer'
 import VideoSidebar from '../../components/VideoSidebar/VideoSidebar'
-import { ThumbsUp, ThumbsDown, Share2, Download, MoreVertical } from 'lucide-react'
+import { ThumbsUp, ThumbsDown, Share2, Download, MoreVertical, Trash2, Trash, AlertTriangle } from 'lucide-react'
 import './Watch.css'
 
-const Watch = ({ videos }) => {
+const Watch = ({ videos, fetchVideos }) => {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [video, setVideo] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showTrashConfirm, setShowTrashConfirm] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     // Find video by id (which is now the relative path)
@@ -18,6 +22,64 @@ const Watch = ({ videos }) => {
     }
     setLoading(false)
   }, [id, videos])
+
+  const handleMoveToTrash = async () => {
+    if (!video) return
+    
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`http://localhost:5000/api/videos/trash/${encodeURIComponent(video.relativePath || video.id)}`, {
+        method: 'POST'
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        alert('Video moved to trash successfully!')
+        // Refresh video list
+        if (fetchVideos) fetchVideos()
+        // Navigate back to home
+        navigate('/')
+      } else {
+        alert('Failed to move video to trash: ' + data.error)
+      }
+    } catch (error) {
+      console.error('Error moving to trash:', error)
+      alert('Error moving video to trash')
+    } finally {
+      setIsDeleting(false)
+      setShowTrashConfirm(false)
+    }
+  }
+
+  const handlePermanentDelete = async () => {
+    if (!video) return
+    
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`http://localhost:5000/api/videos/delete/${encodeURIComponent(video.relativePath || video.id)}`, {
+        method: 'DELETE'
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        alert('Video permanently deleted!')
+        // Refresh video list
+        if (fetchVideos) fetchVideos()
+        // Navigate back to home
+        navigate('/')
+      } else {
+        alert('Failed to delete video: ' + data.error)
+      }
+    } catch (error) {
+      console.error('Error deleting video:', error)
+      alert('Error deleting video')
+    } finally {
+      setIsDeleting(false)
+      setShowDeleteConfirm(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -32,6 +94,7 @@ const Watch = ({ videos }) => {
       <div className="watch__not-found">
         <h2>Video not found</h2>
         <p>The video might have been moved or deleted.</p>
+        <button onClick={() => navigate('/')}>Go to Home</button>
       </div>
     )
   }
@@ -42,6 +105,70 @@ const Watch = ({ videos }) => {
 
   return (
     <div className="watch">
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <AlertTriangle size={24} color="#ff0000" />
+              <h3>Permanent Delete</h3>
+            </div>
+            <div className="modal-body">
+              <p>Are you sure you want to permanently delete <strong>"{video.title}"</strong>?</p>
+              <p className="warning-text">⚠️ This action cannot be undone! The video and its thumbnail will be permanently removed from your computer.</p>
+            </div>
+            <div className="modal-actions">
+              <button 
+                className="modal-btn cancel-btn"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button 
+                className="modal-btn delete-btn"
+                onClick={handlePermanentDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Yes, Delete Permanently'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Trash Confirmation Modal */}
+      {showTrashConfirm && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <Trash2 size={24} color="#ff9900" />
+              <h3>Move to Trash</h3>
+            </div>
+            <div className="modal-body">
+              <p>Move <strong>"{video.title}"</strong> to trash folder?</p>
+              <p className="info-text">📁 The video will be moved to <code>/public/trash/</code> folder. You can restore it manually from there.</p>
+            </div>
+            <div className="modal-actions">
+              <button 
+                className="modal-btn cancel-btn"
+                onClick={() => setShowTrashConfirm(false)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button 
+                className="modal-btn trash-btn"
+                onClick={handleMoveToTrash}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Moving...' : 'Move to Trash'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="watch__main">
         <div className="watch__player">
           <VideoPlayer video={video} />
@@ -87,6 +214,25 @@ const Watch = ({ videos }) => {
               <button className="action-btn">
                 <Download size={20} />
                 <span>Save</span>
+              </button>
+
+              {/* New Delete Buttons */}
+              <button 
+                className="action-btn trash-btn"
+                onClick={() => setShowTrashConfirm(true)}
+                title="Move to trash folder"
+              >
+                <Trash2 size={20} />
+                <span>Move to Trash</span>
+              </button>
+              
+              <button 
+                className="action-btn delete-btn"
+                onClick={() => setShowDeleteConfirm(true)}
+                title="Permanently delete video"
+              >
+                <Trash size={20} />
+                <span>Delete</span>
               </button>
             </div>
             

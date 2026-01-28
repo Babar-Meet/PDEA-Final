@@ -88,7 +88,7 @@ const CategoryPage = ({ videos, categories }) => {
           Back
         </button>
         
-        <div className="category-info">
+        {/* <div className="category-info">
           <div className="category-icon">
             <FolderOpen size={32} />
           </div>
@@ -101,7 +101,7 @@ const CategoryPage = ({ videos, categories }) => {
               <span className="category-path">{categoryInfo?.path}</span>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Subcategories */}
@@ -128,7 +128,7 @@ const CategoryPage = ({ videos, categories }) => {
 
       {/* Videos */}
       <div className="category-videos">
-        <h3>Videos ({categoryVideos.length})</h3>
+        <h3>Videos Count ({categoryVideos.length})</h3>
         {categoryVideos.length > 0 ? (
           <VideoGrid videos={categoryVideos} viewMode="grid" />
         ) : (

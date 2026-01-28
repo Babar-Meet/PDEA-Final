@@ -2,79 +2,77 @@ import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   Home,
-  Compass,
-  PlaySquare,
   Folder,
-  Clock,
-  ThumbsUp,
-  Music,
-  Gamepad2,
-  Trophy,
-  ShoppingBag,
-  Settings,
-  Film,
   FolderOpen,
-  ListVideo
+  ListVideo,
+  Settings
 } from 'lucide-react'
 import './Sidebar.css'
 
-const Sidebar = ({ size, categories, videos }) => {
+const Sidebar = ({ size, videos }) => {
   const location = useLocation()
 
   const mainItems = [
     { icon: <Home size={24} />, label: 'Home', path: '/' }
   ]
 
-  // Get top 5 categories based on video count
-  const topCategories = categories?.slice(0, 5) || []
-
-  // Count videos by folder/category
-  const getCategoryCount = (categoryPath) => {
-    if (!videos) return 0
-    return videos.filter(video => {
-      if (!categoryPath) return !video.folder || video.folder === ''
-      return video.folder === categoryPath || video.folder?.startsWith(categoryPath + '/')
-    }).length
-  }
-
-  // Get popular folders (folders with most videos)
-  const getPopularFolders = () => {
+  // Get all folders from videos (excluding thumbnails and playlist folders)
+  const getAllFolders = () => {
     if (!videos) return []
     
-    const folderCounts = {}
+    const folderSet = new Set()
+    
     videos.forEach(video => {
       if (video.folder) {
-        folderCounts[video.folder] = (folderCounts[video.folder] || 0) + 1
+        folderSet.add(video.folder)
       }
     })
     
-    return Object.entries(folderCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([folder, count]) => ({
-        name: folder.split('/').pop(),
+    // Convert to array and filter out unwanted folders
+    return Array.from(folderSet)
+      .filter(folder => {
+        const lowerFolder = folder.toLowerCase()
+        return lowerFolder !== 'thumbnails' && !lowerFolder.startsWith('playlist')
+      })
+      .map(folder => ({
+        name: folder, // Keep original name for display
         path: folder,
-        count: count
+        count: videos.filter(v => v.folder === folder).length
       }))
   }
 
-  const popularFolders = getPopularFolders()
+  // Get all playlists from videos (folders that start with "playlist")
+  const getAllPlaylists = () => {
+    if (!videos) return []
+    
+    const playlistMap = new Map()
+    
+    videos.forEach(video => {
+      if (video.folder && video.folder.toLowerCase().startsWith('playlist')) {
+        // Remove "playlist" prefix and trim whitespace for display
+        const displayName = video.folder
+          .replace(/^playlist\s*/i, '') // Remove "playlist" prefix (case insensitive)
+          .trim()
+        
+        playlistMap.set(video.folder, {
+          originalName: video.folder,
+          displayName: displayName || video.folder, // Fallback to original if empty after removal
+          count: (playlistMap.get(video.folder)?.count || 0) + 1
+        })
+      }
+    })
+    
+    // Convert to array
+    return Array.from(playlistMap.values())
+      .sort((a, b) => a.displayName.localeCompare(b.displayName))
+  }
+
+  const allFolders = getAllFolders()
+  const allPlaylists = getAllPlaylists()
 
   const subscriptions = [
     { icon: <Folder size={24} />, label: 'My Videos', path: '/category/' },
-    { icon: <Film size={24} />, label: 'All Videos', path: '/category/all' },
-  ]
-
-  const playlistItems = popularFolders.map((folder, index) => ({
-    icon: <FolderOpen size={24} />,
-    label: `${folder.name} (${folder.count})`,
-    path: `/category/${encodeURIComponent(folder.path)}`
-  }))
-
-  const moreOptions = [
-    { icon: <Clock size={24} />, label: 'History', path: '/history' },
-    { icon: <ThumbsUp size={24} />, label: 'Liked Videos', path: '/liked' },
-    { icon: <Settings size={24} />, label: 'Player Settings', path: '/VideoplayerSettings' },
+    { icon: <Folder size={24} />, label: 'All Videos', path: '/category/all' },
   ]
 
   return (
@@ -98,41 +96,6 @@ const Sidebar = ({ size, categories, videos }) => {
           ))}
         </div>
 
-
-        {/* Categories Section - Dynamic */}
-        <div className="sidebar__section">
-          <h3 className="sidebar__title">Categories</h3>
-          {topCategories.map((category, index) => (
-            <Link 
-              key={index} 
-              to={`/category/${encodeURIComponent(category.path)}`}
-              className={`sidebar__item ${location.pathname === `/category/${category.path}` ? 'active' : ''}`}
-            >
-              <span className="sidebar__icon">
-                <Gamepad2 size={24} />
-              </span>
-              <div className="sidebar__label-wrapper">
-                <span className="sidebar__label">{category.displayName}</span>
-                <span className="sidebar__count">{category.count}</span>
-              </div>
-            </Link>
-
-            
-          ))}
-          
-          {categories?.length > 5 && (
-            <Link 
-              to="/categories" 
-              className="sidebar__item sidebar__view-all"
-            >
-              <span className="sidebar__icon">
-                <ListVideo size={24} />
-              </span>
-              <span className="sidebar__label">View All Categories</span>
-            </Link>
-          )}
-        </div>
-
         <div className="sidebar__divider" />
 
         {/* Subscriptions Section */}
@@ -152,33 +115,59 @@ const Sidebar = ({ size, categories, videos }) => {
 
         <div className="sidebar__divider" />
 
-        {/* Popular Folders Section */}
-        <div className="sidebar__section">
-          <h3 className="sidebar__title">Popular Folders</h3>
-          {playlistItems.map((item, index) => (
-            <Link
-              key={index}
-              to={item.path}   
-              className={`sidebar__item ${location.pathname === item.path ? 'active' : ''}`}
-            >
-              <span className="sidebar__icon">{item.icon}</span>
-              <div className="sidebar__label-wrapper">
-                <span className="sidebar__label">{item.label}</span>
-              </div>
-            </Link>
-          ))}
-        </div>
+        {/* All Folders Section */}
+        {allFolders.length > 0 && (
+          <>
+            <div className="sidebar__section">
+              <h3 className="sidebar__title">Videos</h3>
+              {allFolders.map((folder, index) => (
+                <Link
+                  key={index}
+                  to={`/category/${encodeURIComponent(folder.path)}`}
+                  className={`sidebar__item ${location.pathname === `/category/${encodeURIComponent(folder.path)}` ? 'active' : ''}`}
+                >
+                  <span className="sidebar__icon">
+                    <FolderOpen size={24} />
+                  </span>
+                  <div className="sidebar__label-wrapper">
+                    <span className="sidebar__label">{folder.name} ({folder.count})</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <div className="sidebar__divider" />
+          </>
+        )}
+
+        {/* Playlists Section */}
+        {allPlaylists.length > 0 && (
+          <div className="sidebar__section">
+            <h3 className="sidebar__title">Playlists</h3>
+            {allPlaylists.map((playlist, index) => (
+              <Link
+                key={index}
+                to={`/category/${encodeURIComponent(playlist.originalName)}`}
+                className={`sidebar__item ${location.pathname === `/category/${encodeURIComponent(playlist.originalName)}` ? 'active' : ''}`}
+              >
+                <span className="sidebar__icon">
+                  <ListVideo size={24} />
+                </span>
+                <div className="sidebar__label-wrapper">
+                  <span className="sidebar__label">{playlist.displayName} ({playlist.count})</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
 
         <div className="sidebar__divider" />
 
-        {/* More Options */}
+        {/* More Options - Only Settings remains */}
         <div className="sidebar__section">
-          {moreOptions.map((item, index) => (
-            <Link key={index} to={item.path} className="sidebar__item">
-              <span className="sidebar__icon">{item.icon}</span>
-              <span className="sidebar__label">{item.label}</span>
-            </Link>
-          ))}
+          <Link to="/VideoplayerSettings" className="sidebar__item">
+            <span className="sidebar__icon"><Settings size={24} /></span>
+            <span className="sidebar__label">Settings</span>
+          </Link>
         </div>
 
       </nav>

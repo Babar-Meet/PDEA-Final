@@ -15,10 +15,6 @@ function App() {
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchVideos()
-  }, [])
-
   const fetchVideos = async () => {
     try {
       setLoading(true)
@@ -47,6 +43,10 @@ function App() {
     }
   }
 
+  useEffect(() => {
+    fetchVideos()
+  }, [])
+
   const toggleSidebar = () => {
     if (sidebarSize === 'large') setSidebarSize('small')
     else if (sidebarSize === 'small') setSidebarSize('hidden')
@@ -73,12 +73,13 @@ function App() {
                       videos={videos} 
                       categories={categories} 
                       loading={loading} 
+                      fetchVideos={fetchVideos}
                     />
                   } 
                 />
                 <Route 
                   path="/watch/:id" 
-                  element={<Watch videos={videos} />} 
+                  element={<Watch videos={videos} fetchVideos={fetchVideos} />} 
                 />
                 <Route 
                   path="/VideoplayerSettings" 
@@ -90,6 +91,7 @@ function App() {
                     <CategoryPage 
                       videos={videos} 
                       categories={categories} 
+                      fetchVideos={fetchVideos}
                     />
                   } 
                 />
