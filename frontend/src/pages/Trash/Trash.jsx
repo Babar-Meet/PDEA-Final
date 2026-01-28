@@ -193,14 +193,14 @@ const Trash = ({ fetchVideos }) => {
                       <Play size={16} />
                       Watch
                     </button>
-                    <button 
+                    {/* <button 
                       className="open-player-btn"
                       onClick={() => openInMediaPlayer(video.filename)}
                       title="Open in default media player"
                     >
                       <ExternalLink size={16} />
                       Open in Player
-                    </button>
+                    </button> */}
                   </div>
                 </div>
               ))}
