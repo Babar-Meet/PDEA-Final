@@ -8,9 +8,9 @@
   margin-bottom: 40px;
 }
 
-.video-card:hover {
+/* .video-card:hover {
   transform: translateY(-4px);
-}
+} */
 
 .video-card__thumbnail {
   position: relative;
@@ -236,4 +236,24 @@
     width: 120px;
     aspect-ratio: 16 / 9;
   }
+}
+/* Dropdown hover effect - add to existing hover rule */
+.video-card:hover .video-card__menu {
+  opacity: 1;
+  z-index: 99999;
+}
+
+/* Make sure dropdown appears above everything */
+.video-card {
+  position: relative;
+}
+
+/* Fix z-index for sidebar */
+.video-sidebar .video-card--compact {
+  position: relative;
+}
+
+.video-sidebar .video-card--compact .video-card__menu {
+  position: relative;
+  z-index: 100;
 }
