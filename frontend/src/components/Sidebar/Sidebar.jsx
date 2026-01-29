@@ -6,7 +6,8 @@ import {
   FolderOpen,
   ListVideo,
   Settings,
-  Trash2
+  Trash2,
+  Download
 } from 'lucide-react'
 import './Sidebar.css'
 
@@ -35,7 +36,8 @@ const Sidebar = ({ size, videos }) => {
   }, [])
 
   const mainItems = [
-    { icon: <Home size={24} />, label: 'Home', path: '/' }
+    { icon: <Home size={24} />, label: 'Home', path: '/' },
+    { icon: <Download size={24} />, label: 'Download', path: '/download' }
   ]
 
   // Get all folders from videos (excluding thumbnails and playlist folders)

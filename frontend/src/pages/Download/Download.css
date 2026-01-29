@@ -1,0 +1,152 @@
+.download-page {
+  min-height: 100vh;
+  background-color: #0f0f0f;
+}
+
+.download-header {
+  background: #0f0f0f;
+  border-bottom: 1px solid #303030;
+  padding: 24px 32px;
+  margin-bottom: 24px;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.header-icon {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.download-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 4px 0;
+}
+
+.download-subtitle {
+  font-size: 16px;
+  color: #aaaaaa;
+  margin: 0;
+}
+
+.download-container {
+  display: flex;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 32px 32px;
+  gap: 24px;
+}
+
+.download-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  background: #181818;
+  border-radius: 12px;
+  border: 1px solid #303030;
+  padding: 16px 0;
+}
+
+.download-nav {
+  display: flex;
+  flex-direction: column;
+}
+
+.download-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 24px;
+  text-decoration: none;
+  color: #aaaaaa;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+}
+
+.download-nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+.download-nav-item.active {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+  border-left-color: #667eea;
+}
+
+.nav-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.download-content {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .download-container {
+    flex-direction: column;
+    padding: 0 16px 16px;
+  }
+  
+  .download-sidebar {
+    width: 100%;
+  }
+  
+  .download-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 0 16px;
+  }
+  
+  .download-nav-item {
+    flex-shrink: 0;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+  }
+  
+  .download-nav-item.active {
+    border-left: none;
+    border-bottom-color: #667eea;
+  }
+}
+
+@media (max-width: 768px) {
+  .download-header {
+    padding: 16px;
+  }
+  
+  .header-icon {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .download-title {
+    font-size: 24px;
+  }
+  
+  .download-subtitle {
+    font-size: 14px;
+  }
+}

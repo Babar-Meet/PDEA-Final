@@ -8,6 +8,7 @@ import Watch from "./pages/Watch/Watch";
 import CategoryPage from "./pages/CategoryPage/CategoryPage";
 import VideoplayerSettings from "./components/VideoplayerSettings/VideoplayerSettings";
 import Trash from "./pages/Trash/Trash";
+import Download from "./pages/Download/Download";
 import "./App.css";
 
 function App() {
@@ -103,6 +104,10 @@ function App() {
                 <Route
                   path="/trash"
                   element={<Trash fetchVideos={fetchVideos} />}
+                />
+                <Route
+                  path="/download/*"
+                  element={<Download />}
                 />
               </Routes>
             </div>

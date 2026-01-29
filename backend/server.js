@@ -7,6 +7,7 @@ const fs = require('fs');
 // Import routes
 const videoRoutes = require('./routes/videoRoutes');
 const healthRoutes = require('./routes/healthRoutes');
+const downloadRoutes = require('./routes/downloadRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -32,6 +33,7 @@ app.use('/trash', express.static(trashDir)); // <- Moved here, after trashDir is
 // Use routes
 app.use('/api/videos', videoRoutes);
 app.use('/api/health', healthRoutes);
+app.use('/api/download', downloadRoutes);
 
 // Start server
 app.listen(PORT, () => {
@@ -39,4 +41,5 @@ app.listen(PORT, () => {
   console.log(`📁 Public directory: ${publicDir}`);
   console.log(`🖼️  Thumbnails: ${thumbnailsDir}`);
   console.log(`🗑️  Trash folder: ${trashDir}`);
+  console.log(`📥 Download API: http://localhost:${PORT}/api/download`);
 });
