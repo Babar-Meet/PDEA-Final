@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const videoService = require('../services/videoService');
+const thumbnailService = require('../services/thumbnailService'); // Add this
 
 const publicDir = path.join(__dirname, '../public');
 const thumbnailsDir = path.join(publicDir, 'thumbnails');
@@ -44,7 +45,9 @@ exports.getAllVideos = async (req, res) => {
         success: true, 
         videos: [],
         categories: [],
-        total: 0
+        total: 0,
+        thumbnailsNeeded: 0,
+        thumbnailGenerationInProgress: false
       });
     }
 
@@ -62,12 +65,23 @@ exports.getAllVideos = async (req, res) => {
 
     // Create categories based on folder structure
     const categories = createCategories(videos);
+    
+    // Check how many thumbnails are needed
+    const thumbnailsNeeded = thumbnailService.getThumbnailsNeededCount(videoFiles);
+    
+    // Start background thumbnail generation if needed
+    let thumbnailGenerationInProgress = false;
+    if (thumbnailsNeeded > 0 && !req.query.skipThumbnailGeneration) {
+      thumbnailGenerationInProgress = thumbnailService.startBackgroundThumbnailGeneration(videoFiles);
+    }
 
     res.json({ 
       success: true, 
       videos,
       categories,
-      total: videos.length
+      total: videos.length,
+      thumbnailsNeeded,
+      thumbnailGenerationInProgress
     });
     
   } catch (error) {
@@ -79,6 +93,24 @@ exports.getAllVideos = async (req, res) => {
   }
 };
 
+// Add new endpoint for thumbnail progress
+exports.getThumbnailProgress = async (req, res) => {
+  try {
+    const progress = thumbnailService.getThumbnailState();
+    res.json({
+      success: true,
+      ...progress
+    });
+  } catch (error) {
+    console.error('Error getting thumbnail progress:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get thumbnail progress'
+    });
+  }
+};
+
+// The rest of your controller functions remain exactly the same...
 // Create categories from folder structure
 function createCategories(videos) {
   const categories = new Map();

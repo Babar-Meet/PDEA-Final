@@ -18,7 +18,7 @@ exports.getVideoInfo = (filePath, relativePath) => {
     nameWithoutExt : 
     path.join(relativeDir, nameWithoutExt);
   
-  // Get thumbnail - pass video file path for frame extraction
+  // Get thumbnail - this now just returns existing thumbnail or placeholder
   const thumbnail = this.getThumbnail(thumbnailRelativePath, filePath);
   
   // Generate YouTube-like metadata
@@ -61,7 +61,7 @@ exports.getVideoInfo = (filePath, relativePath) => {
   };
 };
 
-// Get thumbnail path, extract frame from video if not found, or generate placeholder
+// Get thumbnail path, return existing thumbnail or placeholder ONLY
 exports.getThumbnail = (thumbnailRelativePath, videoFilePath) => {
   const thumbnailExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
   const thumbnailsBaseDir = path.join(__dirname, '../public/thumbnails');
@@ -83,60 +83,12 @@ exports.getThumbnail = (thumbnailRelativePath, videoFilePath) => {
     }
   }
   
-  // If thumbnail not found, try to extract a frame from the video
-  if (videoFilePath && fs.existsSync(videoFilePath)) {
-    const extractedThumbnail = this.extractVideoFrame(videoFilePath, thumbnailRelativePath);
-    if (extractedThumbnail) {
-      return extractedThumbnail;
-    }
-  }
-  
-  // Generate placeholder if no thumbnail found and video frame extraction failed
+  // If thumbnail not found, return placeholder immediately
+  // DO NOT try to extract frame - that will be done in background
   return this.generatePlaceholderThumbnail(fileName);
 };
 
-// Extract a frame from video and save as thumbnail
-exports.extractVideoFrame = (videoFilePath, thumbnailRelativePath) => {
-  try {
-    const thumbnailsBaseDir = path.join(__dirname, '../public/thumbnails');
-    const thumbnailPath = path.join(thumbnailsBaseDir, thumbnailRelativePath + '.jpg');
-    const thumbnailDir = path.dirname(thumbnailPath);
-    
-    // Create directory if it doesn't exist
-    if (!fs.existsSync(thumbnailDir)) {
-      fs.mkdirSync(thumbnailDir, { recursive: true });
-    }
-    
-    // Use a promise to handle async ffmpeg operation
-    return new Promise((resolve) => {
-      // Try to extract frame at 1 second (or 10% of duration if available)
-      ffmpeg(videoFilePath)
-        .on('end', () => {
-          if (fs.existsSync(thumbnailPath)) {
-            const relativeThumbPath = thumbnailPath.replace(thumbnailsBaseDir + path.sep, '').replace(/\\/g, '/');
-            resolve(`/thumbnails/${encodeURIComponent(relativeThumbPath)}`);
-          } else {
-            resolve(null);
-          }
-        })
-        .on('error', (err) => {
-          console.error('Error extracting video frame:', err.message);
-          resolve(null);
-        })
-        .screenshots({
-          count: 1,
-          filename: path.basename(thumbnailRelativePath) + '.jpg',
-          folder: thumbnailDir,
-          size: '320x180'
-        });
-    });
-  } catch (error) {
-    console.error('Error in extractVideoFrame:', error);
-    return null;
-  }
-};
-
-// Generate placeholder thumbnail
+// Generate placeholder thumbnail (same as before)
 exports.generatePlaceholderThumbnail = (nameWithoutExt) => {
   const colors = [
     'ff6b6b', '48dbfb', '1dd1a1', 'feca57', 'ff9ff3', '54a0ff', '5f27cd', '00d2d3'
@@ -151,7 +103,7 @@ exports.generatePlaceholderThumbnail = (nameWithoutExt) => {
   return `https://via.placeholder.com/320x180/${color}/ffffff?text=${encodeURIComponent(nameWithoutExt.substring(0, 20))}`;
 };
 
-// Clean video title
+// The rest of the functions remain the same...
 exports.cleanTitle = (nameWithoutExt) => {
   return nameWithoutExt
     .replace(/[-_]/g, ' ')

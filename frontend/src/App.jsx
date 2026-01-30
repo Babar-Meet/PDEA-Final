@@ -9,6 +9,7 @@ import CategoryPage from "./pages/CategoryPage/CategoryPage";
 import VideoplayerSettings from "./components/VideoplayerSettings/VideoplayerSettings";
 import Trash from "./pages/Trash/Trash";
 import Download from "./pages/Download/Download";
+import ThumbnailGenerator from "./components/ThumbnailGenerator/ThumbnailGenerator";
 import "./App.css";
 
 function App() {
@@ -16,22 +17,27 @@ function App() {
   const [videos, setVideos] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [thumbnailsNeeded, setThumbnailsNeeded] = useState(0);
+  const [showThumbnailGenerator, setShowThumbnailGenerator] = useState(false);
+  const [hasSkipped, setHasSkipped] = useState(false);
 
-  const fetchVideos = async () => {
+  const fetchVideos = async (skipThumbnailGeneration = false) => {
     try {
       setLoading(true);
-      const response = await fetch("http://localhost:5000/api/videos");
+      const url = skipThumbnailGeneration 
+        ? "http://localhost:5000/api/videos?skipThumbnailGeneration=true"
+        : "http://localhost:5000/api/videos";
+      
+      const response = await fetch(url);
       const data = await response.json();
 
       if (data.success) {
         // Process videos with full URLs for thumbnails and streaming
         const videosWithFullUrls = data.videos.map((video) => ({
           ...video,
-          // For streaming, use the API endpoint with relative path
           url:
             video.url ||
             `/api/videos/stream/${encodeURIComponent(video.relativePath || video.id)}`,
-          // For thumbnails, use full URL if they're local
           thumbnail: video.thumbnail.startsWith("/")
             ? `http://localhost:5000${video.thumbnail}`
             : video.thumbnail,
@@ -39,12 +45,29 @@ function App() {
 
         setVideos(videosWithFullUrls);
         setCategories(data.categories || []);
+        setThumbnailsNeeded(data.thumbnailsNeeded || 0);
+        
+        // Show thumbnail generator if thumbnails are needed and user hasn't skipped
+        if (data.thumbnailsNeeded > 0 && !hasSkipped && !skipThumbnailGeneration) {
+          setShowThumbnailGenerator(true);
+        }
       }
     } catch (error) {
       console.error("Error fetching videos:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSkipThumbnailGeneration = () => {
+    setHasSkipped(true);
+    setShowThumbnailGenerator(false);
+    // Re-fetch with skip parameter
+    fetchVideos(true);
+  };
+
+  const handleCloseThumbnailGenerator = () => {
+    setShowThumbnailGenerator(false);
   };
 
   useEffect(() => {
@@ -71,6 +94,13 @@ function App() {
             <div
               className={`app__content ${sidebarSize === "large" ? "sidebar-open" : ""}`}
             >
+              {showThumbnailGenerator && (
+                <ThumbnailGenerator
+                  onSkip={handleSkipThumbnailGeneration}
+                  thumbnailsNeeded={thumbnailsNeeded}
+                />
+              )}
+              
               <Routes>
                 <Route
                   path="/"
@@ -80,6 +110,8 @@ function App() {
                       categories={categories}
                       loading={loading}
                       fetchVideos={fetchVideos}
+                      thumbnailsNeeded={thumbnailsNeeded}
+                      showThumbnailGenerator={showThumbnailGenerator}
                     />
                   }
                 />
