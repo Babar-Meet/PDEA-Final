@@ -3,6 +3,8 @@ const path = require('path');
 const videoService = require('../services/videoService');
 const thumbnailService = require('../services/thumbnailService'); // Add this
 
+// const publicDir = path.join('C:', 'folder', 'subfoler', 'subsub folder');
+
 const publicDir = path.join(__dirname, '../public');
 const thumbnailsDir = path.join(publicDir, 'thumbnails');
 const trashDir = path.join(publicDir, 'trash');
