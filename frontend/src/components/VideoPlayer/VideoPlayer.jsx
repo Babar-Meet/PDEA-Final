@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import { 
   Play, 
   Pause, 
@@ -16,13 +16,10 @@ import {
   Repeat1
 } from 'lucide-react'
 import { useVideoPlayerSettings } from '../../Context/VideoPlayerSettingsContext'
-import { useWatchProgress } from '../../Context/WatchProgressContext' // ADD THIS LINE
-import ResumeOption from '../ResumeOption/ResumeOption' // ADD THIS LINE
 import './VideoPlayer.css'
 
 const VideoPlayer = ({ video, videos, onNextVideo, onPreviousVideo }) => {
   const { settings } = useVideoPlayerSettings()
-  const { fetchVideoProgress, updateVideoProgress, formatTime: formatProgressTime } = useWatchProgress() // ADD THIS LINE
   
   const videoRef = useRef(null)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -34,13 +31,7 @@ const VideoPlayer = ({ video, videos, onNextVideo, onPreviousVideo }) => {
   const [showControls, setShowControls] = useState(true)
   const [playbackRate, setPlaybackRate] = useState(1)
   
-  // NEW: Watch progress states
-  const [savedProgress, setSavedProgress] = useState(null)
-  const [showResumeOption, setShowResumeOption] = useState(false)
-  const [hasResumed, setHasResumed] = useState(false)
-  const progressCheckIntervalRef = useRef(null)
-  
-  // Loop and auto-play states
+  // NEW: Loop and auto-play states
   const [loopSingle, setLoopSingle] = useState(settings.loopSingle)
   const [showLoopAnimation, setShowLoopAnimation] = useState(false)
   const [isAutoPlayingNext, setIsAutoPlayingNext] = useState(false)
@@ -89,34 +80,6 @@ const VideoPlayer = ({ video, videos, onNextVideo, onPreviousVideo }) => {
   const mouseHoldTimerRef = useRef(null)
   const isMouseHoldingRef = useRef(false)
 
-  // Fetch saved progress when video changes
-  useEffect(() => {
-    const fetchProgress = async () => {
-      if (!video || !video.id) return;
-      
-      try {
-        const progress = await fetchVideoProgress(video.id);
-        if (progress && progress.time > 120) { // More than 2 minutes
-          setSavedProgress(progress);
-          setShowResumeOption(true);
-        } else {
-          setSavedProgress(null);
-          setShowResumeOption(false);
-        }
-      } catch (error) {
-        console.error('Error fetching progress:', error);
-        setSavedProgress(null);
-        setShowResumeOption(false);
-      }
-    };
-    
-    fetchProgress();
-    
-    // Reset resume state
-    setHasResumed(false);
-    setCurrentTime(0);
-  }, [video, fetchVideoProgress]);
-
   // Auto-play effect when video changes
   useEffect(() => {
     // Reset video state when video changes
@@ -135,9 +98,9 @@ const VideoPlayer = ({ video, videos, onNextVideo, onPreviousVideo }) => {
     if (leftSkipTimeoutRef.current) clearTimeout(leftSkipTimeoutRef.current);
     if (rightSkipTimeoutRef.current) clearTimeout(rightSkipTimeoutRef.current);
     
-    // Auto-play the new video after a short delay (unless we have saved progress)
+    // Auto-play the new video after a short delay
     const autoPlayTimer = setTimeout(() => {
-      if (videoRef.current && settings.autoPlayNext && !savedProgress) {
+      if (videoRef.current && settings.autoPlayNext) {
         videoRef.current.play().then(() => {
           setIsPlaying(true);
           // Show play animation
@@ -147,53 +110,16 @@ const VideoPlayer = ({ video, videos, onNextVideo, onPreviousVideo }) => {
           }, 600);
         }).catch(error => {
           console.log("Auto-play prevented by browser. User interaction required.");
+          // Auto-play was prevented, we'll show the play button
           setIsPlaying(false);
         });
       }
-    }, 300);
+    }, 300); // Small delay to ensure video is loaded
     
     return () => {
       clearTimeout(autoPlayTimer);
     };
-  }, [video, settings.autoPlayNext, savedProgress]);
-
-  // Save progress periodically
-  useEffect(() => {
-    // Clear existing interval
-    if (progressCheckIntervalRef.current) {
-      clearInterval(progressCheckIntervalRef.current);
-    }
-
-    // Only start saving progress if video is playing and we have a video ID
-    if (isPlaying && video?.id) {
-      progressCheckIntervalRef.current = setInterval(() => {
-        if (videoRef.current && videoRef.current.currentTime > 120) { // Only save if > 2 minutes
-          updateVideoProgress(video.id, Math.floor(videoRef.current.currentTime));
-        }
-      }, 10000); // Save every 10 seconds
-    }
-
-    // Also save on pause
-    const handlePause = () => {
-      if (videoRef.current && video?.id && videoRef.current.currentTime > 120) {
-        updateVideoProgress(video.id, Math.floor(videoRef.current.currentTime));
-      }
-    };
-
-    const videoElement = videoRef.current;
-    if (videoElement) {
-      videoElement.addEventListener('pause', handlePause);
-    }
-
-    return () => {
-      if (progressCheckIntervalRef.current) {
-        clearInterval(progressCheckIntervalRef.current);
-      }
-      if (videoElement) {
-        videoElement.removeEventListener('pause', handlePause);
-      }
-    };
-  }, [isPlaying, video, updateVideoProgress]);
+  }, [video, settings.autoPlayNext]);
 
   // Clean up animations when video changes
   useEffect(() => {
@@ -212,7 +138,55 @@ const VideoPlayer = ({ video, videos, onNextVideo, onPreviousVideo }) => {
       // Cleanup when component unmounts
       clearAllTimeouts();
     };
-  }, [video])
+  }, [video]) // Run when video prop changes
+
+  useEffect(() => {
+    const videoElement = videoRef.current
+    
+    const handleLoadedMetadata = () => {
+      setDuration(videoElement.duration)
+      // Show tooltip for 5 seconds on first load
+      if (showSpacebarTooltip && settings.tempSpeedEnabled) {
+        tooltipTimeoutRef.current = setTimeout(() => {
+          setShowSpacebarTooltip(false)
+        }, 5000)
+      }
+    }
+    
+    const handleEnded = () => {
+      if (loopSingle) {
+        // Loop current video
+        videoElement.currentTime = 0
+        videoElement.play()
+        showLoopAnimationEffect()
+      } else if (settings.autoPlayNext && onNextVideo) {
+        // Auto-play next video
+        setIsAutoPlayingNext(true)
+        setTimeout(() => {
+          onNextVideo()
+          setIsAutoPlayingNext(false)
+        }, settings.autoPlayDelay * 1000)
+      } else {
+        setIsPlaying(false)
+      }
+    }
+    
+    // Handle fullscreen change
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement)
+    }
+    
+    videoElement.addEventListener('loadedmetadata', handleLoadedMetadata)
+    videoElement.addEventListener('ended', handleEnded)
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    
+    return () => {
+      videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata)
+      videoElement.removeEventListener('ended', handleEnded)
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+      clearAllTimeouts()
+    }
+  }, [loopSingle, settings.autoPlayNext, settings.autoPlayDelay, onNextVideo, showSpacebarTooltip, settings.tempSpeedEnabled])
 
   const clearAllTimeouts = () => {
     if (animationTimeoutRef.current) clearTimeout(animationTimeoutRef.current)
@@ -224,35 +198,7 @@ const VideoPlayer = ({ video, videos, onNextVideo, onPreviousVideo }) => {
     if (mouseHoldTimerRef.current) clearTimeout(mouseHoldTimerRef.current)
     if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current)
     if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current)
-    if (progressCheckIntervalRef.current) clearInterval(progressCheckIntervalRef.current)
   }
-
-  // Resume option handlers
-  const handleResume = useCallback((time) => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = time;
-      videoRef.current.play().then(() => {
-        setIsPlaying(true);
-        setHasResumed(true);
-        setShowResumeOption(false);
-      }).catch(error => {
-        console.error('Error resuming video:', error);
-      });
-    }
-  }, []);
-
-  const handleRestart = useCallback(() => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = 0;
-      videoRef.current.play().then(() => {
-        setIsPlaying(true);
-        setHasResumed(false);
-        setShowResumeOption(false);
-      }).catch(error => {
-        console.error('Error restarting video:', error);
-      });
-    }
-  }, []);
 
   const showLoopAnimationEffect = () => {
     setShowLoopAnimation(true)
@@ -884,21 +830,7 @@ const VideoPlayer = ({ video, videos, onNextVideo, onPreviousVideo }) => {
         src={`http://localhost:5000/api/videos/stream/${encodeURIComponent(video.relativePath || video.id)}`}
         onTimeUpdate={handleTimeUpdate}
         loop={loopSingle}
-        onLoadedMetadata={() => {
-          setDuration(videoRef.current.duration)
-        }}
       />
-      
-      {/* Resume Option */}
-      {showResumeOption && savedProgress && !hasResumed && (
-        <ResumeOption
-          progress={savedProgress.time}
-          duration={duration}
-          onResume={handleResume}
-          onRestart={handleRestart}
-          autoHideDelay={10000}
-        />
-      )}
       
       {/* Play/Pause Animation Overlay - Center */}
       <div className={`animation-overlay center-animation ${showPlayPauseAnimation ? 'active' : ''}`}>

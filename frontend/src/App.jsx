@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { VideoPlayerSettingsProvider } from "./Context/VideoPlayerSettingsContext";
-import { WatchProgressProvider } from "./Context/WatchProgressContext"; // ADD THIS LINE
 import Header from "./components/Header/Header";
 import Sidebar from "./components/Sidebar/Sidebar";
 import Home from "./pages/Home/Home";
@@ -83,72 +82,70 @@ function App() {
 
   return (
     <VideoPlayerSettingsProvider>
-      <WatchProgressProvider> {/* ADD THIS LINE */}
-        <Router>
-          <div className="app">
-            <Header toggleSidebar={toggleSidebar} />
-            <div className="app__main">
-              <Sidebar
-                size={sidebarSize}
-                categories={categories}
-                videos={videos}
-              />
-              <div
-                className={`app__content ${sidebarSize === "large" ? "sidebar-open" : ""}`}
-              >
-                {showThumbnailGenerator && (
-                  <ThumbnailGenerator
-                    onSkip={handleSkipThumbnailGeneration}
-                    thumbnailsNeeded={thumbnailsNeeded}
-                  />
-                )}
-                
-                <Routes>
-                  <Route
-                    path="/"
-                    element={
-                      <Home
-                        videos={videos}
-                        categories={categories}
-                        loading={loading}
-                        fetchVideos={fetchVideos}
-                        thumbnailsNeeded={thumbnailsNeeded}
-                        showThumbnailGenerator={showThumbnailGenerator}
-                      />
-                    }
-                  />
-                  <Route
-                    path="/watch/:id"
-                    element={<Watch videos={videos} fetchVideos={fetchVideos} />}
-                  />
-                  <Route
-                    path="/VideoplayerSettings"
-                    element={<VideoplayerSettings />}
-                  />
-                  <Route
-                    path="/category/:categoryPath?"
-                    element={
-                      <CategoryPage
-                        videos={videos}
-                        categories={categories}
-                        fetchVideos={fetchVideos}
-                      />
-                    }
-                  />
-                  <Route
-                    path="/trash"
-                    element={<Trash fetchVideos={fetchVideos} />}
-                  />
-                  <Route
-                    path="/download/*"
-                    element={<Download />}
-                  />
-                </Routes>
-              </div>
+      <Router>
+        <div className="app">
+          <Header toggleSidebar={toggleSidebar} />
+          <div className="app__main">
+            <Sidebar
+              size={sidebarSize}
+              categories={categories}
+              videos={videos}
+            />
+            <div
+              className={`app__content ${sidebarSize === "large" ? "sidebar-open" : ""}`}
+            >
+              {showThumbnailGenerator && (
+                <ThumbnailGenerator
+                  onSkip={handleSkipThumbnailGeneration}
+                  thumbnailsNeeded={thumbnailsNeeded}
+                />
+              )}
+              
+              <Routes>
+                <Route
+                  path="/"
+                  element={
+                    <Home
+                      videos={videos}
+                      categories={categories}
+                      loading={loading}
+                      fetchVideos={fetchVideos}
+                      thumbnailsNeeded={thumbnailsNeeded}
+                      showThumbnailGenerator={showThumbnailGenerator}
+                    />
+                  }
+                />
+                <Route
+                  path="/watch/:id"
+                  element={<Watch videos={videos} fetchVideos={fetchVideos} />}
+                />
+                <Route
+                  path="/VideoplayerSettings"
+                  element={<VideoplayerSettings />}
+                />
+                <Route
+                  path="/category/:categoryPath?"
+                  element={
+                    <CategoryPage
+                      videos={videos}
+                      categories={categories}
+                      fetchVideos={fetchVideos}
+                    />
+                  }
+                />
+                <Route
+                  path="/trash"
+                  element={<Trash fetchVideos={fetchVideos} />}
+                />
+                <Route
+                  path="/download/*"
+                  element={<Download />}
+                />
+              </Routes>
             </div>
           </div>
-        </Router>
-      </WatchProgressProvider> {/* ADD THIS LINE */}
+        </div>
+      </Router>
     </VideoPlayerSettingsProvider>
   );
 }
