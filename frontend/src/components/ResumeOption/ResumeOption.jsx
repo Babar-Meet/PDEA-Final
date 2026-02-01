@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Play, RotateCcw, Clock } from 'lucide-react';
 import './ResumeOption.css';
 
@@ -7,11 +7,12 @@ const ResumeOption = ({
   duration, 
   onResume, 
   onRestart, 
-  autoHideDelay = 10000 
+  autoHideDelay = 5000 
 }) => {
   const [isVisible, setIsVisible] = useState(true);
   const [timeLeft, setTimeLeft] = useState(autoHideDelay / 1000);
   const [progressPercentage, setProgressPercentage] = useState(0);
+  const hasAutoPlayedRef = useRef(false);
 
   useEffect(() => {
     // Calculate progress percentage
@@ -25,6 +26,13 @@ const ResumeOption = ({
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
+          
+          // Auto-play from beginning when timer runs out
+          if (!hasAutoPlayedRef.current) {
+            hasAutoPlayedRef.current = true;
+            onRestart();
+          }
+          
           setIsVisible(false);
           return 0;
         }
@@ -36,13 +44,19 @@ const ResumeOption = ({
     const timeout = setTimeout(() => {
       setIsVisible(false);
       clearInterval(interval);
+      
+      // Auto-play from beginning when timeout completes
+      if (!hasAutoPlayedRef.current) {
+        hasAutoPlayedRef.current = true;
+        onRestart();
+      }
     }, autoHideDelay);
 
     return () => {
       clearInterval(interval);
       clearTimeout(timeout);
     };
-  }, [progress, duration, autoHideDelay]);
+  }, [progress, duration, autoHideDelay, onRestart]);
 
   const formatTime = (seconds) => {
     const hrs = Math.floor(seconds / 3600);
@@ -55,8 +69,6 @@ const ResumeOption = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  if (!isVisible) return null;
-
   const handleResume = () => {
     onResume(progress);
     setIsVisible(false);
@@ -66,6 +78,8 @@ const ResumeOption = ({
     onRestart();
     setIsVisible(false);
   };
+
+  if (!isVisible) return null;
 
   return (
     <div className={`resume-option ${!isVisible ? 'hidden' : ''}`}>
