@@ -8,6 +8,7 @@ const fs = require('fs');
 const videoRoutes = require('./routes/videoRoutes');
 const healthRoutes = require('./routes/healthRoutes');
 const downloadRoutes = require('./routes/downloadRoutes');
+const watchProgressRoutes = require('./routes/watchProgressRoutes'); // ADD THIS LINE
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -28,12 +29,13 @@ const trashDir = path.join(publicDir, 'trash');
 // Serve static files
 app.use('/public', express.static(publicDir));
 app.use('/thumbnails', express.static(thumbnailsDir));
-app.use('/trash', express.static(trashDir)); // <- Moved here, after trashDir is defined
+app.use('/trash', express.static(trashDir));
 
 // Use routes
 app.use('/api/videos', videoRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/download', downloadRoutes);
+app.use('/api/watch-progress', watchProgressRoutes); // ADD THIS LINE
 
 // Start server
 app.listen(PORT, () => {
@@ -41,5 +43,5 @@ app.listen(PORT, () => {
   console.log(`📁 Public directory: ${publicDir}`);
   console.log(`🖼️  Thumbnails: ${thumbnailsDir}`);
   console.log(`🗑️  Trash folder: ${trashDir}`);
-  console.log(`📥 Download API: http://localhost:${PORT}/api/download`);
+  console.log(`🎬 Watch Progress API: http://localhost:${PORT}/api/watch-progress`);
 });

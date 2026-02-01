@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import VideoPlayer from '../../components/VideoPlayer/VideoPlayer'
 import VideoSidebar from '../../components/VideoSidebar/VideoSidebar'
-import { ThumbsUp, ThumbsDown, Share2, Download, MoreVertical, Trash2, Trash, AlertTriangle } from 'lucide-react'
+import { ThumbsUp, ThumbsDown, Share2, Download, MoreVertical, Trash2, Trash, AlertTriangle, Clock } from 'lucide-react' // ADD Clock
+import { useWatchProgress } from '../../Context/WatchProgressContext' // ADD THIS LINE
 import './Watch.css'
 
 const Watch = ({ videos, fetchVideos }) => {
@@ -13,15 +14,24 @@ const Watch = ({ videos, fetchVideos }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showTrashConfirm, setShowTrashConfirm] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const { progressData, fetchVideoProgress } = useWatchProgress() // ADD THIS LINE
+  const [videoProgress, setVideoProgress] = useState(null) // ADD THIS LINE
 
   useEffect(() => {
     // Find video by id (which is now the relative path)
     const foundVideo = videos.find(v => v.id === id)
     if (foundVideo) {
       setVideo(foundVideo)
+      
+      // Fetch progress for this video
+      const fetchProgress = async () => {
+        const progress = await fetchVideoProgress(foundVideo.id)
+        setVideoProgress(progress)
+      }
+      fetchProgress()
     }
     setLoading(false)
-  }, [id, videos])
+  }, [id, videos, fetchVideoProgress])
 
   // Get current video index and next/previous videos
   const currentIndex = videos.findIndex(v => v.id === id)
@@ -106,6 +116,18 @@ const Watch = ({ videos, fetchVideos }) => {
     }
   }
 
+  // ADD THIS FUNCTION
+  const formatProgressTime = (seconds) => {
+    const hrs = Math.floor(seconds / 3600)
+    const mins = Math.floor((seconds % 3600) / 60)
+    const secs = Math.floor(seconds % 60)
+    
+    if (hrs > 0) {
+      return `${hrs}h ${mins}m ${secs}s`
+    }
+    return `${mins}m ${secs}s`
+  }
+
   if (loading) {
     return (
       <div className="watch__loading">
@@ -174,7 +196,7 @@ const Watch = ({ videos, fetchVideos }) => {
               <p>Move <strong>"{video.title}"</strong> to trash folder?</p>
               <p className="info-text">📁 The video will be moved to <code>/public/trash/</code> folder. You can restore it manually from there.</p>
               {nextVideo && (
-                <p className="info-text">▶️ Next video "{nextVideo.title}" will play automatically.</p>
+                <p className="info-text">⏩ Next video "{nextVideo.title}" will play automatically.</p>
               )}
             </div>
             <div className="modal-actions">
@@ -216,6 +238,19 @@ const Watch = ({ videos, fetchVideos }) => {
               <span className="watch__date">{video.uploadDate}</span>
               {video.category && (
                 <span className="watch__category">{categoryDisplay}</span>
+              )}
+              
+              {/* ADD Watch Progress Info */}
+              {videoProgress && videoProgress.time > 120 && (
+                <span className="watch__progress" style={{ 
+                  color: '#3ea6ff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  <Clock size={14} />
+                  Watched: {formatProgressTime(videoProgress.time)}
+                </span>
               )}
             </div>
             
@@ -317,6 +352,35 @@ const Watch = ({ videos, fetchVideos }) => {
             <div className="watch__description">
               <p>{video.filename} • {video.size} • {video.type}</p>
               <p>Video {currentIndex + 1} of {videos.length}</p>
+              
+              {/* ADD Progress Info */}
+              {videoProgress && videoProgress.time > 120 && (
+                <div style={{ 
+                  marginTop: '10px',
+                  padding: '8px',
+                  background: 'rgba(62, 166, 255, 0.1)',
+                  borderRadius: '6px',
+                  borderLeft: '3px solid #3ea6ff'
+                }}>
+                  <p style={{ 
+                    margin: 0, 
+                    color: '#3ea6ff',
+                    fontSize: '13px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
+                    <Clock size={14} />
+                    <strong>Watch Progress:</strong> You've watched {formatProgressTime(videoProgress.time)} of this video.
+                    {videoProgress.lastWatched && (
+                      <span style={{ fontSize: '12px', opacity: 0.8, marginLeft: '8px' }}>
+                        (Last watched: {new Date(videoProgress.lastWatched).toLocaleDateString()})
+                      </span>
+                    )}
+                  </p>
+                </div>
+              )}
+              
               {video.tags && video.tags.length > 0 && (
                 <div className="watch__tags">
                   {video.tags.slice(0, 5).map((tag, index) => (
