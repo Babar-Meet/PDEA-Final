@@ -7,12 +7,13 @@ const ResumeOption = ({
   duration, 
   onResume, 
   onRestart, 
-  autoHideDelay = 5000 
+  autoHideDelay = 10000,
+  autoResume = true  // New prop to control auto-resume behavior
 }) => {
   const [isVisible, setIsVisible] = useState(true);
   const [timeLeft, setTimeLeft] = useState(autoHideDelay / 1000);
   const [progressPercentage, setProgressPercentage] = useState(0);
-  const hasAutoPlayedRef = useRef(false);
+  const hasAutoResumedRef = useRef(false);
 
   useEffect(() => {
     // Calculate progress percentage
@@ -27,10 +28,10 @@ const ResumeOption = ({
         if (prev <= 1) {
           clearInterval(interval);
           
-          // Auto-play from beginning when timer runs out
-          if (!hasAutoPlayedRef.current) {
-            hasAutoPlayedRef.current = true;
-            onRestart();
+          // Auto-resume when countdown completes
+          if (autoResume && !hasAutoResumedRef.current) {
+            hasAutoResumedRef.current = true;
+            onResume(progress);
           }
           
           setIsVisible(false);
@@ -42,21 +43,22 @@ const ResumeOption = ({
 
     // Auto-hide after delay
     const timeout = setTimeout(() => {
-      setIsVisible(false);
       clearInterval(interval);
       
-      // Auto-play from beginning when timeout completes
-      if (!hasAutoPlayedRef.current) {
-        hasAutoPlayedRef.current = true;
-        onRestart();
+      // Auto-resume when timeout completes
+      if (autoResume && !hasAutoResumedRef.current) {
+        hasAutoResumedRef.current = true;
+        onResume(progress);
       }
+      
+      setIsVisible(false);
     }, autoHideDelay);
 
     return () => {
       clearInterval(interval);
       clearTimeout(timeout);
     };
-  }, [progress, duration, autoHideDelay, onRestart]);
+  }, [progress, duration, autoHideDelay, autoResume, onResume]);
 
   const formatTime = (seconds) => {
     const hrs = Math.floor(seconds / 3600);
@@ -70,11 +72,13 @@ const ResumeOption = ({
   };
 
   const handleResume = () => {
+    hasAutoResumedRef.current = true;
     onResume(progress);
     setIsVisible(false);
   };
 
   const handleRestart = () => {
+    hasAutoResumedRef.current = true;
     onRestart();
     setIsVisible(false);
   };
@@ -83,7 +87,9 @@ const ResumeOption = ({
 
   return (
     <div className={`resume-option ${!isVisible ? 'hidden' : ''}`}>
-      <div className="resume-timer">{timeLeft}</div>
+      <div className="resume-timer">
+        {timeLeft}
+      </div>
       
       <div className="resume-header">
         <Clock size={18} />
@@ -105,7 +111,7 @@ const ResumeOption = ({
       <div className="resume-actions">
         <button className="resume-btn primary" onClick={handleResume}>
           <Play size={16} style={{ marginRight: '6px' }} />
-          Resume
+          Resume Now
         </button>
         <button className="resume-btn secondary" onClick={handleRestart}>
           <RotateCcw size={16} style={{ marginRight: '6px' }} />
