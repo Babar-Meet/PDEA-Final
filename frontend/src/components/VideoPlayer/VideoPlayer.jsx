@@ -319,11 +319,12 @@ const VideoPlayer = ({ video, videos, onNextVideo, onPreviousVideo }) => {
     // Only handle left mouse button
     if (e.button !== 0) return
     
-    // Don't activate if clicking on controls
+    // Don't activate if clicking on controls or resume popup
     if (e.target.closest('.video-player__controls') || 
         e.target.closest('.control-btn') ||
         e.target.closest('.progress-slider') ||
         e.target.closest('.volume-slider') ||
+        e.target.closest('.resume-popup') ||
         e.target.tagName === 'INPUT') {
       return
     }
@@ -345,11 +346,12 @@ const VideoPlayer = ({ video, videos, onNextVideo, onPreviousVideo }) => {
   const handleMouseUp = (e) => {
     if (e.button !== 0) return
     
-    // Don't handle if clicking on controls
+    // Don't handle if clicking on controls or resume popup
     if (e.target.closest('.video-player__controls') || 
         e.target.closest('.control-btn') ||
         e.target.closest('.progress-slider') ||
         e.target.closest('.volume-slider') ||
+        e.target.closest('.resume-popup') ||
         e.target.tagName === 'INPUT') {
       return
     }
@@ -400,11 +402,12 @@ const VideoPlayer = ({ video, videos, onNextVideo, onPreviousVideo }) => {
 
   // Handle double click event directly (as backup)
   const handleDoubleClick = (e) => {
-    // Don't handle if clicking on controls
+    // Don't handle if clicking on controls or resume popup
     if (e.target.closest('.video-player__controls') || 
         e.target.closest('.control-btn') ||
         e.target.closest('.progress-slider') ||
         e.target.closest('.volume-slider') ||
+        e.target.closest('.resume-popup') ||
         e.target.tagName === 'INPUT') {
       return
     }
