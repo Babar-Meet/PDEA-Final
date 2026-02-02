@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { API_BASE_URL } from '../../config'
 import { Link } from 'react-router-dom'
 import { Play, MoreVertical, Folder, Trash2, Trash } from 'lucide-react'
 import './VideoCard.css'
@@ -55,7 +56,7 @@ const VideoCard = ({ video, compact = false, fetchVideos }) => {
     if (!window.confirm(`Move "${title}" to trash?`)) return
     
     try {
-      const response = await fetch(`http://localhost:5000/api/videos/trash/${encodeURIComponent(video.relativePath || video.id)}`, {
+      const response = await fetch(`${API_BASE_URL}/api/videos/trash/${encodeURIComponent(video.relativePath || video.id)}`, {
         method: 'POST'
       })
       
@@ -82,7 +83,7 @@ const VideoCard = ({ video, compact = false, fetchVideos }) => {
     if (!window.confirm(`Permanently delete "${title}"? This cannot be undone!`)) return
     
     try {
-      const response = await fetch(`http://localhost:5000/api/videos/delete/${encodeURIComponent(video.relativePath || video.id)}`, {
+      const response = await fetch(`${API_BASE_URL}/api/videos/delete/${encodeURIComponent(video.relativePath || video.id)}`, {
         method: 'DELETE'
       })
       

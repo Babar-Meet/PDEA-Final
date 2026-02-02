@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { API_BASE_URL } from '../../config'
 import { Link, useLocation } from 'react-router-dom'
 import {
   Home,
@@ -19,7 +20,7 @@ const Sidebar = ({ size, videos }) => {
   useEffect(() => {
     const fetchTrashCount = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/videos/trash')
+        const response = await fetch(`${API_BASE_URL}/api/videos/trash`)
         const data = await response.json()
         if (data.success) {
           setTrashCount(data.total)

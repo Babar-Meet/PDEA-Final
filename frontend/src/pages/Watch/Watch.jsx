@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { API_BASE_URL } from '../../config'
 import { useParams, useNavigate } from 'react-router-dom'
 import VideoPlayer from '../../components/VideoPlayer/VideoPlayer'
 import VideoSidebar from '../../components/VideoSidebar/VideoSidebar'
@@ -45,7 +46,7 @@ const Watch = ({ videos, fetchVideos }) => {
     
     setIsDeleting(true)
     try {
-      const response = await fetch(`http://localhost:5000/api/videos/trash/${encodeURIComponent(video.relativePath || video.id)}`, {
+      const response = await fetch(`${API_BASE_URL}/api/videos/trash/${encodeURIComponent(video.relativePath || video.id)}`, {
         method: 'POST'
       })
       
@@ -78,7 +79,7 @@ const Watch = ({ videos, fetchVideos }) => {
     
     setIsDeleting(true)
     try {
-      const response = await fetch(`http://localhost:5000/api/videos/delete/${encodeURIComponent(video.relativePath || video.id)}`, {
+      const response = await fetch(`${API_BASE_URL}/api/videos/delete/${encodeURIComponent(video.relativePath || video.id)}`, {
         method: 'DELETE'
       })
       

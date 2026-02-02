@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../config';
 import { Loader2, AlertTriangle, CheckCircle, XCircle, Image, SkipForward } from 'lucide-react';
 import './ThumbnailGenerator.css';
 
@@ -22,7 +23,7 @@ const ThumbnailGenerator = ({ onSkip, thumbnailsNeeded }) => {
 
     const fetchProgress = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/videos/thumbnail-progress');
+        const response = await fetch(`${API_BASE_URL}/api/videos/thumbnail-progress`);
         const data = await response.json();
         
         if (data.success) {

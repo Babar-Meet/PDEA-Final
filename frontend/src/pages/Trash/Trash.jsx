@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { API_BASE_URL } from '../../config'
 import { useNavigate } from 'react-router-dom'
 import { Trash2, RefreshCw, AlertTriangle, FileVideo, Play, ExternalLink } from 'lucide-react'
 import './Trash.css'
@@ -12,7 +13,7 @@ const Trash = ({ fetchVideos }) => {
   const fetchTrashVideos = async () => {
     try {
       setLoading(true)
-      const response = await fetch('http://localhost:5000/api/videos/trash')
+      const response = await fetch(`${API_BASE_URL}/api/videos/trash`)
       const data = await response.json()
       
       if (data.success) {
@@ -36,7 +37,7 @@ const Trash = ({ fetchVideos }) => {
 
     setIsEmptying(true)
     try {
-      const response = await fetch('http://localhost:5000/api/videos/trash/empty', {
+      const response = await fetch(`${API_BASE_URL}/api/videos/trash/empty`, {
         method: 'DELETE'
       })
       
@@ -60,7 +61,7 @@ const Trash = ({ fetchVideos }) => {
   // Function to open video in default media player
   const openInMediaPlayer = (filename) => {
     // Get the full path to the trash video
-    const videoUrl = `http://localhost:5000/trash/${encodeURIComponent(filename)}`
+    const videoUrl = `${API_BASE_URL}/trash/${encodeURIComponent(filename)}`
     
     // Create a temporary link to download/play the video
     const link = document.createElement('a')
@@ -72,7 +73,7 @@ const Trash = ({ fetchVideos }) => {
 
   // Function to watch video in browser
   const watchInBrowser = (filename) => {
-    const videoUrl = `http://localhost:5000/trash/${encodeURIComponent(filename)}`
+    const videoUrl = `${API_BASE_URL}/trash/${encodeURIComponent(filename)}`
     window.open(videoUrl, '_blank')
   }
 

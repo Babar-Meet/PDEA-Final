@@ -36,8 +36,23 @@ app.use('/api/health', healthRoutes);
 app.use('/api/download', downloadRoutes);
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running: http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  const networkInterfaces = require('os').networkInterfaces();
+  const getLocalIp = () => {
+    for (const name of Object.keys(networkInterfaces)) {
+      for (const net of networkInterfaces[name]) {
+        // Skip over non-IPv4 and internal (i.e. 127.0.0.1) addresses
+        if (net.family === 'IPv4' && !net.internal) {
+          return net.address;
+        }
+      }
+    }
+    return 'localhost';
+  };
+  const localIp = getLocalIp();
+
+  console.log(`🚀 Server running locally: http://localhost:${PORT}`);
+  console.log(`🌐 Server running on network: http://${localIp}:${PORT}`);
   console.log(`📁 Public directory: ${publicDir}`);
   console.log(`🖼️  Thumbnails: ${thumbnailsDir}`);
   console.log(`🗑️  Trash folder: ${trashDir}`);

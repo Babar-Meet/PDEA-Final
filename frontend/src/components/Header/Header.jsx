@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { API_BASE_URL } from "../../config";
 import { useNavigate } from "react-router-dom";
 import {
   Menu,
@@ -88,7 +89,7 @@ const Header = ({ toggleSidebar }) => {
     setIsSearching(true);
     try {
       // Search in videos
-      const response = await fetch("http://localhost:5000/api/videos");
+      const response = await fetch(`${API_BASE_URL}/api/videos`);
       const data = await response.json();
       
       if (data.success) {
@@ -99,7 +100,7 @@ const Header = ({ toggleSidebar }) => {
         const videosWithScores = data.videos.map(video => {
           // Convert thumbnail path to full URL
           const fullThumbnail = video.thumbnail?.startsWith("/")
-            ? `http://localhost:5000${video.thumbnail}`
+            ? `${API_BASE_URL}${video.thumbnail}`
             : video.thumbnail;
           
           return {

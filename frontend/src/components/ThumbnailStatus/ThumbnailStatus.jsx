@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { API_BASE_URL } from '../../config'
 import { Check, X, Image } from 'lucide-react'
 import './ThumbnailStatus.css'
 
@@ -12,7 +13,7 @@ const ThumbnailStatus = () => {
 
   const fetchThumbnailStats = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/info')
+      const response = await fetch(`${API_BASE_URL}/api/info`)
       const data = await response.json()
       setStats(data)
     } catch (error) {

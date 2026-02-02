@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "./config";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { VideoPlayerSettingsProvider } from "./Context/VideoPlayerSettingsContext";
 import Header from "./components/Header/Header";
@@ -25,8 +26,8 @@ function App() {
     try {
       setLoading(true);
       const url = skipThumbnailGeneration 
-        ? "http://localhost:5000/api/videos?skipThumbnailGeneration=true"
-        : "http://localhost:5000/api/videos";
+        ? `${API_BASE_URL}/api/videos?skipThumbnailGeneration=true`
+        : `${API_BASE_URL}/api/videos`;
       
       const response = await fetch(url);
       const data = await response.json();
@@ -39,7 +40,7 @@ function App() {
             video.url ||
             `/api/videos/stream/${encodeURIComponent(video.relativePath || video.id)}`,
           thumbnail: video.thumbnail.startsWith("/")
-            ? `http://localhost:5000${video.thumbnail}`
+            ? `${API_BASE_URL}${video.thumbnail}`
             : video.thumbnail,
         }));
 

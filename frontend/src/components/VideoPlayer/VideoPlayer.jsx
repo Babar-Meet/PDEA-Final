@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react'
+import { API_BASE_URL } from '../../config'
 import { 
   Play, 
   Pause, 
@@ -827,7 +828,7 @@ const VideoPlayer = ({ video, videos, onNextVideo, onPreviousVideo }) => {
       <video
         ref={videoRef}
         className="video-player__element"
-        src={`http://localhost:5000/api/videos/stream/${encodeURIComponent(video.relativePath || video.id)}`}
+        src={`${API_BASE_URL}/api/videos/stream/${encodeURIComponent(video.relativePath || video.id)}`}
         onTimeUpdate={handleTimeUpdate}
         loop={loopSingle}
       />
