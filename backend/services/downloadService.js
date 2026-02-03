@@ -10,9 +10,13 @@ const thumbnailsDir = path.join(publicDir, 'thumbnails');
 const downloads = new Map();
 const processes = new Map();
 
+const queue = [];
+let isProcessingQueue = false;
+
 class DownloadService {
   constructor() {
     this.downloads = downloads;
+    this.queue = queue;
   }
 
   // Get formats for a video URL
@@ -50,6 +54,58 @@ class DownloadService {
           resolve(this.processFormats(info));
         } catch (err) {
           reject(new Error(`Failed to parse yt-dlp output: ${err.message}`));
+        }
+      });
+    });
+  }
+
+  // Get info for all videos in a playlist
+  async getPlaylistInfo(url) {
+    return new Promise((resolve, reject) => {
+      const args = [
+        '--dump-json',
+        '--no-warnings',
+        '--extractor-args', 'youtube:player_client=android,web',
+        '--flat-playlist',
+        url
+      ];
+
+      const process = spawn('yt-dlp', args);
+      
+      let output = '';
+      let error = '';
+
+      process.stdout.on('data', (data) => {
+        output += data.toString();
+      });
+
+      process.stderr.on('data', (data) => {
+        error += data.toString();
+      });
+
+      process.on('close', (code) => {
+        if (code !== 0) {
+          reject(new Error(`yt-dlp process exited with code ${code}: ${error}`));
+          return;
+        }
+
+        try {
+          // yt-dlp returns one JSON object per line for playlists
+          const lines = output.trim().split('\n');
+          const videos = lines.map(line => {
+            const info = JSON.parse(line);
+            return {
+              id: info.id,
+              title: info.title,
+              url: info.url || `https://www.youtube.com/watch?v=${info.id}`,
+              thumbnail: info.thumbnail,
+              duration: info.duration,
+              uploader: info.uploader
+            };
+          });
+          resolve({ videos });
+        } catch (err) {
+          reject(new Error(`Failed to parse playlist output: ${err.message}`));
         }
       });
     });
@@ -127,7 +183,7 @@ class DownloadService {
   }
 
   // Start a download
-  startDownload(url, formatId, saveDir = 'Not Watched') {
+  startDownload(url, formatId, saveDir = 'Not Watched', metadata = {}) {
     const downloadId = uuidv4();
     
     // Create status object
@@ -137,7 +193,10 @@ class DownloadService {
       progress: 0,
       speed: '0',
       eta: '0',
-      filename: null,
+      filename: metadata.title || null,
+      title: metadata.title || null,
+      thumbnail: metadata.thumbnail || null,
+      batchId: metadata.batchId || null,
       error: null,
       saveDir,
       url,
@@ -149,7 +208,8 @@ class DownloadService {
       fs.mkdirSync(outputDir, { recursive: true });
     }
 
-    const outputTemplate = path.join(outputDir, '%(title)s.%(ext)s');
+    const prefix = metadata.index !== undefined ? `${metadata.index.toString().padStart(2, '0')} ` : '';
+    const outputTemplate = path.join(outputDir, `${prefix}%(title)s.%(ext)s`);
 
     const args = [
       '-f', formatId,
@@ -159,7 +219,11 @@ class DownloadService {
       '--newline',
       '--write-thumbnail',
       '--convert-thumbnails', 'jpg',
-      '--output', `thumbnail:${path.join(thumbnailsDir, '%(title)s')}`,
+      '--output', `thumbnail:${path.join(thumbnailsDir, `${prefix}%(title)s`)}`,
+      '--retries', '10',
+      '--fragment-retries', '10',
+      '--socket-timeout', '30',
+      '--no-mtime',
       url
     ];
 
@@ -169,10 +233,34 @@ class DownloadService {
        args.push('--merge-output-format', 'mp4');
     }
 
+    // Add to queue instead of starting immediately
+    this.queue.push({ downloadId, args });
+    this.downloads.get(downloadId).status = 'queued';
+    
+    // Trigger queue processing
+    this.processQueue();
+
+    return downloadId;
+  }
+
+  async processQueue() {
+    if (isProcessingQueue || this.queue.length === 0) return;
+    
+    isProcessingQueue = true;
+    const { downloadId, args } = this.queue.shift();
+    const status = this.downloads.get(downloadId);
+    
+    if (status.status === 'cancelled') {
+      isProcessingQueue = false;
+      this.processQueue();
+      return;
+    }
+
+    status.status = 'starting';
+    this.downloads.set(downloadId, status);
+
     const process = spawn('yt-dlp', args);
     processes.set(downloadId, process);
-
-    const status = this.downloads.get(downloadId);
 
     process.stdout.on('data', (data) => {
       const line = data.toString();
@@ -220,9 +308,11 @@ class DownloadService {
         status.error = `Process exited with code ${code}`;
       }
       this.downloads.set(downloadId, status);
+      
+      // Process next in queue after a small delay
+      isProcessingQueue = false;
+      setTimeout(() => this.processQueue(), 1000);
     });
-
-    return downloadId;
   }
 
   cancelDownload(id) {

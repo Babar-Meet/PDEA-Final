@@ -107,7 +107,10 @@ const SimpleDownload = () => {
     const finalDir = showNewDirInput && newDirName.trim() ? newDirName.trim() : selectedDir
     
     setError(null)
-    const result = await startDownload(url, formatId, finalDir)
+    const result = await startDownload(url, formatId, finalDir, {
+      title: metadata?.title,
+      thumbnail: metadata?.thumbnail
+    })
     
     if (!result.success) {
       setError(result.error)

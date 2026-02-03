@@ -23,15 +23,29 @@ exports.getFormats = async (req, res) => {
   }
 };
 
+exports.getPlaylistInfo = async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url) {
+      return res.status(400).json({ success: false, error: 'URL is required' });
+    }
+
+    const data = await downloadService.getPlaylistInfo(url);
+    res.json({ success: true, ...data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to fetch playlist info: ' + error.message });
+  }
+};
+
 exports.startDownload = (req, res) => {
   try {
-    const { url, format_id, save_dir } = req.body;
+    const { url, format_id, save_dir, metadata } = req.body;
     
     if (!url || !format_id) {
       return res.status(400).json({ success: false, error: 'URL and format_id are required' });
     }
 
-    const downloadId = downloadService.startDownload(url, format_id, save_dir);
+    const downloadId = downloadService.startDownload(url, format_id, save_dir, metadata);
     res.json({ success: true, download_id: downloadId });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

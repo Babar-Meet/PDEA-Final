@@ -8,6 +8,9 @@ router.get('/directories', downloadController.getDirectories);
 // Get formats for a video
 router.post('/formats', downloadController.getFormats);
 
+// Get playlist info
+router.post('/playlist-info', downloadController.getPlaylistInfo);
+
 // Start a download (simple or merge)
 router.post('/start', downloadController.startDownload);
 

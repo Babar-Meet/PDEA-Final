@@ -36,12 +36,12 @@ export const DownloadProvider = ({ children }) => {
     pollIntervalRef.current = setInterval(fetchDownloads, 2000);
   };
 
-  const startDownload = async (url, format_id, save_dir) => {
+  const startDownload = async (url, format_id, save_dir, metadata = {}) => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/download/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, format_id, save_dir })
+        body: JSON.stringify({ url, format_id, save_dir, metadata })
       });
       const data = await res.json();
       if (data.success) {
