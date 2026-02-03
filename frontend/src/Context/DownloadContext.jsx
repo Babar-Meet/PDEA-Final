@@ -101,6 +101,23 @@ export const DownloadProvider = ({ children }) => {
     }
   };
 
+  const retryDownload = async (id) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/download/retry/${id}`, {
+        method: 'POST'
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchDownloads();
+        startPolling();
+      }
+      return data.success;
+    } catch (err) {
+      console.error('Failed to retry download', err);
+      return false;
+    }
+  };
+
   useEffect(() => {
     fetchDownloads();
     fetchSettings();
@@ -115,6 +132,7 @@ export const DownloadProvider = ({ children }) => {
       startDownload, 
       cancelDownload, 
       fetchDownloads,
+      retryDownload,
       settings,
       updateSettings,
       fetchSettings

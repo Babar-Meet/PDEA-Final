@@ -76,6 +76,16 @@ exports.getAllDownloads = (req, res) => {
   }
 };
 
+exports.retryDownload = (req, res) => {
+  try {
+    const { id } = req.params;
+    const success = downloadService.retryDownload(id);
+    res.json({ success });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 exports.cancelDownload = (req, res) => {
   try {
     const { id } = req.params;

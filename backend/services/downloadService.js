@@ -222,6 +222,8 @@ class DownloadService {
       title: metadata.title || null,
       thumbnail: metadata.thumbnail || null,
       batchId: metadata.batchId || null,
+      index: metadata.index,
+      formatId,
       error: null,
       saveDir,
       url,
@@ -355,6 +357,59 @@ class DownloadService {
         setTimeout(() => this.processQueue(), 500);
       }
     });
+  }
+
+  retryDownload(id) {
+    const status = this.downloads.get(id);
+    if (!status) return false;
+
+    // Remove old process if exists (shouldn't if it's finished/failed)
+    const oldProcess = processes.get(id);
+    if (oldProcess) oldProcess.kill();
+
+    // Reset status but keep metadata
+    status.status = 'starting';
+    status.progress = 0;
+    status.speed = '0';
+    status.eta = '0';
+    status.error = null;
+    status.timestamp = new Date().toISOString();
+
+    const outputDir = path.join(publicDir, status.saveDir);
+    const targetThumbDir = path.join(thumbnailsDir, status.saveDir);
+    
+    const prefix = status.index !== undefined ? `${status.index.toString().padStart(2, '0')} ` : '';
+    const outputTemplate = path.join(outputDir, `${prefix}%(title)s.%(ext)s`);
+
+    const args = [
+      '-f', status.formatId,
+      '-o', outputTemplate,
+      '--no-playlist',
+      '--extractor-args', 'youtube:player_client=android,web',
+      '--newline',
+      '--write-thumbnail',
+      '--convert-thumbnails', 'jpg',
+      '--output', `thumbnail:${path.join(targetThumbDir, `${prefix}%(title)s`)}`,
+      '--retries', '10',
+      '--fragment-retries', '10',
+      '--socket-timeout', '30',
+      '--no-mtime',
+      status.url
+    ];
+
+    if (status.formatId.includes('+')) {
+       args.push('--merge-output-format', 'mp4');
+    }
+
+    if (!status.batchId) {
+      this.startProcess(id, args);
+    } else {
+      this.queue.push({ downloadId: id, args, isBatch: true });
+      status.status = 'queued';
+      this.processQueue();
+    }
+    
+    return true;
   }
 
   cancelDownload(id) {

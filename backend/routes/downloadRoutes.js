@@ -23,6 +23,9 @@ router.get('/all', downloadController.getAllDownloads);
 // Cancel a download
 router.post('/cancel/:id', downloadController.cancelDownload);
 
+// Retry a download
+router.post('/retry/:id', downloadController.retryDownload);
+
 // Settings
 router.get('/settings', downloadController.getSettings);
 router.post('/settings', downloadController.updateSettings);

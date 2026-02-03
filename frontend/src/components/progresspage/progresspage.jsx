@@ -9,12 +9,13 @@ import {
   ExternalLink,
   Trash2,
   RefreshCw,
-  Video
+  Video,
+  RotateCcw
 } from 'lucide-react';
 import './progresspage.css';
 
 const ProgressPage = () => {
-  const { downloads, cancelDownload, fetchDownloads } = useDownload();
+  const { downloads, cancelDownload, fetchDownloads, retryDownload } = useDownload();
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -89,15 +90,26 @@ const ProgressPage = () => {
                       </span>
                     )}
                   </div>
-                  {(['downloading', 'starting', 'queued'].includes(dl.status)) && (
-                    <button 
-                      className="cancel-dl-btn" 
-                      onClick={() => cancelDownload(dl.id)}
-                      title="Cancel Download"
-                    >
-                      <X size={16} />
-                    </button>
-                  )}
+                  <div className="dl-header-actions">
+                    {dl.status === 'error' && (
+                      <button 
+                        className="retry-dl-btn" 
+                        onClick={() => retryDownload(dl.id)}
+                        title="Retry Download"
+                      >
+                        <RotateCcw size={16} />
+                      </button>
+                    )}
+                    {(['downloading', 'starting', 'queued'].includes(dl.status)) && (
+                      <button 
+                        className="cancel-dl-btn" 
+                        onClick={() => cancelDownload(dl.id)}
+                        title="Cancel Download"
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="dl-filename" title={dl.title || dl.filename || dl.url}>
