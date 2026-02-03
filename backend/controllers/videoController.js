@@ -146,7 +146,7 @@ function createCategories(videos) {
     const pathParts = video.relativePath.split(path.sep);
     const directoryPath = pathParts.slice(0, -1).join(path.sep); // Remove filename
     
-    if (directoryPath) {
+    if (directoryPath && !directoryPath.toLowerCase().startsWith('ambience')) {
       // Split by directory to create subcategories
       let currentPath = '';
       pathParts.slice(0, -1).forEach(part => {

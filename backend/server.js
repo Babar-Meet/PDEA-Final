@@ -8,6 +8,7 @@ const fs = require('fs');
 const videoRoutes = require('./routes/videoRoutes');
 const healthRoutes = require('./routes/healthRoutes');
 const downloadRoutes = require('./routes/downloadRoutes');
+const ambienceRoutes = require('./routes/ambienceRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -20,8 +21,10 @@ app.use(express.json());
 const publicDir = path.join(__dirname, 'public');
 const thumbnailsDir = path.join(publicDir, 'thumbnails');
 const trashDir = path.join(publicDir, 'trash');
+const ambienceDir = path.join(publicDir, 'ambience');
+const ambienceThumbnailsDir = path.join(thumbnailsDir, 'ambience');
 
-[publicDir, thumbnailsDir, trashDir].forEach(dir => {
+[publicDir, thumbnailsDir, trashDir, ambienceDir, ambienceThumbnailsDir].forEach(dir => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
@@ -34,6 +37,7 @@ app.use('/trash', express.static(trashDir)); // <- Moved here, after trashDir is
 app.use('/api/videos', videoRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/download', downloadRoutes);
+app.use('/api/ambience', ambienceRoutes);
 
 // Start server
 app.listen(PORT, '0.0.0.0', () => {

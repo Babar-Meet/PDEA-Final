@@ -8,7 +8,8 @@ import {
   ListVideo,
   Settings,
   Trash2,
-  Download
+  Download,
+  Wind
 } from 'lucide-react'
 import './Sidebar.css'
 
@@ -38,6 +39,7 @@ const Sidebar = ({ size, videos }) => {
 
   const mainItems = [
     { icon: <Home size={24} />, label: 'Home', path: '/' },
+    { icon: <Wind size={24} />, label: 'Ambience', path: '/ambience' },
     { icon: <Download size={24} />, label: 'Download', path: '/download' }
   ]
 
@@ -57,7 +59,7 @@ const Sidebar = ({ size, videos }) => {
     return Array.from(folderSet)
       .filter(folder => {
         const lowerFolder = folder.toLowerCase()
-        return lowerFolder !== 'thumbnails' && !lowerFolder.startsWith('playlist') && lowerFolder !== 'trash'
+        return lowerFolder !== 'thumbnails' && !lowerFolder.startsWith('playlist') && lowerFolder !== 'trash' && lowerFolder !== 'ambience'
       })
       .map(folder => ({
         name: folder, // Keep original name for display

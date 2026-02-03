@@ -3,6 +3,7 @@ import { API_BASE_URL } from "./config";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { VideoPlayerSettingsProvider } from "./Context/VideoPlayerSettingsContext";
 import { DownloadProvider } from "./Context/DownloadContext";
+import { AmbienceProvider } from "./Context/AmbienceContext";
 import Header from "./components/Header/Header";
 import Sidebar from "./components/Sidebar/Sidebar";
 import Home from "./pages/Home/Home";
@@ -11,6 +12,7 @@ import CategoryPage from "./pages/CategoryPage/CategoryPage";
 import VideoplayerSettings from "./components/VideoplayerSettings/VideoplayerSettings";
 import Trash from "./pages/Trash/Trash";
 import Download from "./pages/Download/Download";
+import Ambience from "./components/Ambience/Ambience";
 import ThumbnailGenerator from "./components/ThumbnailGenerator/ThumbnailGenerator";
 import "./App.css";
 
@@ -85,20 +87,22 @@ function App() {
   return (
     <VideoPlayerSettingsProvider>
       <DownloadProvider>
-        <Router>
-          <AppContent 
-            sidebarSize={sidebarSize} 
-            setSidebarSize={setSidebarSize}
-            toggleSidebar={toggleSidebar}
-            videos={videos}
-            categories={categories}
-            loading={loading}
-            fetchVideos={fetchVideos}
-            thumbnailsNeeded={thumbnailsNeeded}
-            showThumbnailGenerator={showThumbnailGenerator}
-            handleSkipThumbnailGeneration={handleSkipThumbnailGeneration}
-          />
-        </Router>
+        <AmbienceProvider>
+          <Router>
+            <AppContent 
+              sidebarSize={sidebarSize} 
+              setSidebarSize={setSidebarSize}
+              toggleSidebar={toggleSidebar}
+              videos={videos}
+              categories={categories}
+              loading={loading}
+              fetchVideos={fetchVideos}
+              thumbnailsNeeded={thumbnailsNeeded}
+              showThumbnailGenerator={showThumbnailGenerator}
+              handleSkipThumbnailGeneration={handleSkipThumbnailGeneration}
+            />
+          </Router>
+        </AmbienceProvider>
       </DownloadProvider>
     </VideoPlayerSettingsProvider>
   );
@@ -185,6 +189,10 @@ function AppContent({
             <Route
               path="/download/*"
               element={<Download />}
+            />
+            <Route
+              path="/ambience"
+              element={<Ambience />}
             />
           </Routes>
         </div>
