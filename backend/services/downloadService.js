@@ -6,6 +6,15 @@ const { v4: uuidv4 } = require('uuid');
 const publicDir = path.join(__dirname, '../public');
 const thumbnailsDir = path.join(publicDir, 'thumbnails');
 
+const getYtDlpPath = () => {
+  const localExe = path.join(publicDir, 'yt-dlp.exe');
+  if (fs.existsSync(localExe)) {
+    console.log('Using local yt-dlp:', localExe);
+    return localExe;
+  }
+  return 'yt-dlp';
+};
+
 // Store active downloads and their processes
 const downloads = new Map();
 const processes = new Map();
@@ -55,7 +64,7 @@ class DownloadService {
         url
       ];
 
-      const process = spawn('yt-dlp', args);
+      const process = spawn(getYtDlpPath(), args);
       
       let output = '';
       let error = '';
@@ -88,7 +97,7 @@ class DownloadService {
     return new Promise((resolve, reject) => {
       const runOnce = (attempt, extraArgs = []) => {
         const finalArgs = [...args, ...extraArgs];
-        const child = spawn('yt-dlp', finalArgs);
+        const child = spawn(getYtDlpPath(), finalArgs);
 
         let output = '';
         let error = '';
@@ -437,7 +446,7 @@ class DownloadService {
         url
       ];
 
-      const process = spawn('yt-dlp', args);
+      const process = spawn(getYtDlpPath(), args);
       
       let output = '';
       let error = '';
@@ -659,7 +668,7 @@ class DownloadService {
 
   startProcess(downloadId, args, isBatch = false) {
     const status = this.downloads.get(downloadId);
-    const process = spawn('yt-dlp', args);
+    const process = spawn(getYtDlpPath(), args);
     processes.set(downloadId, process);
 
     process.stdout.on('data', (data) => {
