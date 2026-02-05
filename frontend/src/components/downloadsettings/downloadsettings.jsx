@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useDownload } from '../../Context/DownloadContext';
+import { useDownload } from '../../hooks/useDownload';
 import { 
   Settings, 
   Save, 

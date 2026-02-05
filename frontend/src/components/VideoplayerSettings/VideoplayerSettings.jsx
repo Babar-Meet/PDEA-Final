@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useVideoPlayerSettings } from '../../Context/VideoPlayerSettingsContext';
+import { useVideoPlayerSettings } from '../../hooks/useVideoPlayerSettings';
 import './VideoPlayerSettings.css';
 
 const KeyBindingInput = ({ label, value, onChange, description }) => {

@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { API_BASE_URL } from "./config";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
-import { VideoPlayerSettingsProvider } from "./Context/VideoPlayerSettingsContext";
-import { DownloadProvider } from "./Context/DownloadContext";
-import { AmbienceProvider } from "./Context/AmbienceContext";
+import AmbienceSync from "./components/AmbienceSync/AmbienceSync";
+import DownloadPoller from "./components/DownloadPoller/DownloadPoller";
 import Header from "./components/Header/Header";
 import Sidebar from "./components/Sidebar/Sidebar";
 import Home from "./pages/Home/Home";
@@ -85,11 +84,11 @@ function App() {
   };
 
   return (
-    <VideoPlayerSettingsProvider>
-      <DownloadProvider>
-        <AmbienceProvider>
-          <Router>
-            <AppContent 
+    <>
+      <AmbienceSync />
+      <DownloadPoller />
+      <Router>
+        <AppContent 
               sidebarSize={sidebarSize} 
               setSidebarSize={setSidebarSize}
               toggleSidebar={toggleSidebar}
@@ -101,10 +100,8 @@ function App() {
               showThumbnailGenerator={showThumbnailGenerator}
               handleSkipThumbnailGeneration={handleSkipThumbnailGeneration}
             />
-          </Router>
-        </AmbienceProvider>
-      </DownloadProvider>
-    </VideoPlayerSettingsProvider>
+      </Router>
+    </>
   );
 }
 

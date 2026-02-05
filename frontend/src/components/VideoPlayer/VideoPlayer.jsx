@@ -20,7 +20,7 @@ import {
   X,
   Monitor
 } from 'lucide-react'
-import { useVideoPlayerSettings } from '../../Context/VideoPlayerSettingsContext'
+import { useVideoPlayerSettings } from '../../hooks/useVideoPlayerSettings'
 import './VideoPlayer.css'
 
 const SPEED_OPTIONS = [3, 2.5, 2, 1.75, 1.5, 1.25, 1, 0.75, 0.5, 0.25, 0.01]

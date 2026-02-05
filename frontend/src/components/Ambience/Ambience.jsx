@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../config';
-import { useAmbience } from '../../Context/AmbienceContext';
+import { useAmbience } from '../../hooks/useAmbience';
 import { 
   Music, 
   Volume2, 
