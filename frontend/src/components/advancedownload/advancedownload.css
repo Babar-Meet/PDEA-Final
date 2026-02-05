@@ -1,0 +1,43 @@
+.advance-download-container {
+  padding: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+  color: #fff;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.advance-download-maintenance {
+  text-align: center;
+  padding: 48px 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  max-width: 480px;
+}
+
+.advance-download-maintenance .maintenance-icon {
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 16px;
+}
+
+.advance-download-maintenance h2 {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.advance-download-maintenance p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.advance-download-maintenance .maintenance-hint {
+  margin-top: 16px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+}

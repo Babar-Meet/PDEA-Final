@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import DownloadHeader from '../../components/Header/DownloadHeader'
 import DownloadNav from '../../components/DownloadNav/DownloadNav'
 import SimpleDownload from '../../components/simpledownload/simpledownload'
+import AdvanceDownload from '../../components/advancedownload/advancedownload'
 import BatchDownload from '../../components/batchdownload/batchdownload'
 import PlaylistDownload from '../../components/playlistdownload/playlistdownload'
 import QueueVideos from '../../components/queuevideos/queuevideos'
@@ -20,6 +21,7 @@ const Download = () => {
         <Routes>
           <Route index element={<Navigate to="/download/simple" replace />} />
           <Route path="simple" element={<SimpleDownload />} />
+          <Route path="advance" element={<AdvanceDownload />} />
           <Route path="batch" element={<BatchDownload />} />
           <Route path="playlist" element={<PlaylistDownload />} />
           <Route path="queue" element={<QueueVideos />} />

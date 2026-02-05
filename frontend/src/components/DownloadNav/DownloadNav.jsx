@@ -2,6 +2,7 @@ import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { 
   Video, 
+  SlidersHorizontal,
   Users, 
   List, 
   Clock, 
@@ -16,6 +17,7 @@ const DownloadNav = () => {
 
   const navItems = [
     { path: '/download/simple', label: 'Simple Download', icon: <Video size={20} /> },
+    { path: '/download/advance', label: 'Advance Download', icon: <SlidersHorizontal size={20} /> },
     { path: '/download/batch', label: 'Batch Download', icon: <Users size={20} /> },
     { path: '/download/playlist', label: 'Playlist', icon: <List size={20} /> },
     { path: '/download/queue', label: 'Queue', icon: <Clock size={20} /> },
