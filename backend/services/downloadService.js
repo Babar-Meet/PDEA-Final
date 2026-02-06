@@ -259,10 +259,15 @@ class DownloadService {
       )[0] ||
       'und';
 
+    let thumbnail = info.thumbnail;
+    if (!thumbnail && info.thumbnails && Array.isArray(info.thumbnails) && info.thumbnails.length > 0) {
+      thumbnail = info.thumbnails[info.thumbnails.length - 1].url;
+    }
+
     const metadata = {
       id: info.id,
       title: info.title,
-      thumbnail: info.thumbnail,
+      thumbnail: thumbnail,
       duration: info.duration,
       durationText: info.duration_string,
       uploader: info.uploader,
@@ -648,10 +653,11 @@ class DownloadService {
   async startDirectDownload({ url, saveDir = 'Not Watched', mode = 'original', qualityKey, audioLanguage, metadata = {}, clientInfo = {} }) {
     const info = await this.getDirectInfo(url, clientInfo);
     
-    // Merge fetched metadata (which contains thumbnail) with provided metadata
-    // Provided metadata takes precedence if keys collide, but fetched fills gaps (like thumbnail for quick downloads)
+    // Parse metadata using our helper to get robust thumbnail and fields
+    const parsedData = this.buildDirectMetadata(info);
+    
     const finalMetadata = {
-        ...info.metadata,
+        ...parsedData.metadata,
         ...metadata
     };
 
