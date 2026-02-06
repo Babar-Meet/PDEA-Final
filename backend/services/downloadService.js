@@ -469,16 +469,29 @@ class DownloadService {
           // yt-dlp returns one JSON object per line for playlists
           const lines = output.trim().split('\n');
           const videos = lines.map(line => {
-            const info = JSON.parse(line);
-            return {
-              id: info.id,
-              title: info.title,
-              url: info.url || `https://www.youtube.com/watch?v=${info.id}`,
-              thumbnail: info.thumbnail,
-              duration: info.duration,
-              uploader: info.uploader
-            };
-          });
+            if (!line.trim()) return null;
+            try {
+                const info = JSON.parse(line);
+                let thumbnail = info.thumbnail;
+                // If simple thumbnail missing, try to find one in thumbnails array
+                if (!thumbnail && info.thumbnails && Array.isArray(info.thumbnails) && info.thumbnails.length > 0) {
+                     // Get the last one as it is usually the highest quality
+                     thumbnail = info.thumbnails[info.thumbnails.length - 1].url;
+                }
+                
+                return {
+                  id: info.id,
+                  title: info.title,
+                  url: info.url || `https://www.youtube.com/watch?v=${info.id}`,
+                  thumbnail: thumbnail,
+                  duration: info.duration,
+                  uploader: info.uploader
+                };
+            } catch (e) {
+                console.error('Failed to parse playlist line', e);
+                return null;
+            }
+          }).filter(v => v !== null);
           resolve({ videos });
         } catch (err) {
           reject(new Error(`Failed to parse playlist output: ${err.message}`));
@@ -634,6 +647,14 @@ class DownloadService {
 
   async startDirectDownload({ url, saveDir = 'Not Watched', mode = 'original', qualityKey, audioLanguage, metadata = {}, clientInfo = {} }) {
     const info = await this.getDirectInfo(url, clientInfo);
+    
+    // Merge fetched metadata (which contains thumbnail) with provided metadata
+    // Provided metadata takes precedence if keys collide, but fetched fills gaps (like thumbnail for quick downloads)
+    const finalMetadata = {
+        ...info.metadata,
+        ...metadata
+    };
+
     const formatId = this.selectBestFormats(info, {
       mode,
       qualityKey,
@@ -645,7 +666,7 @@ class DownloadService {
       throw new Error('Unable to determine a suitable format for this video');
     }
 
-    return this.startDownload(url, formatId, saveDir, metadata);
+    return this.startDownload(url, formatId, saveDir, finalMetadata);
   }
 
   processQueue() {
