@@ -222,7 +222,12 @@ const SimpleDownload = () => {
             >
               {qualityOptions.map(quality => (
                 <option key={quality} value={quality}>
-                  {quality === '3840x2160' ? '4K (2160p)' :
+                  {
+                   quality === '23040x12960' ? '24K (12960p)' :
+                   quality === '15360x8640' ? '16K (8640p)' :
+                   quality === '11520x6480' ? '12K (6480p)' :
+                   quality === '7680x4320' ? '8K (4320p)' :
+                   quality === '3840x2160' ? '4K (2160p)' :
                    quality === '2560x1440' ? '2K (1440p)' :
                    quality === '1920x1080' ? 'Full HD (1080p)' :
                    quality === '1280x720' ? 'HD (720p)' :

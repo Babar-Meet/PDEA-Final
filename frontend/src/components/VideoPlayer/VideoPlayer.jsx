@@ -260,7 +260,11 @@ const VideoPlayer = ({ video, videos, onNextVideo, onPreviousVideo, cinemaMode, 
       const height = videoElement.videoHeight
       if (height) {
         let quality = ''
-        if (height >= 2160) quality = '4K'
+        if (height >= 12960) quality = '24K'
+        else if (height >= 8640) quality = '16K'
+        else if (height >= 6480) quality = '12K'
+        else if (height >= 4320) quality = '8K'
+        else if (height >= 2160) quality = '4K'
         else if (height >= 1440) quality = '1440p'
         else if (height >= 1080) quality = '1080p'
         else if (height >= 720) quality = '720p'
