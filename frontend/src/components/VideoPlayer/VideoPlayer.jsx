@@ -38,6 +38,8 @@ const VideoPlayer = ({ video, videos, onNextVideo, onPreviousVideo, cinemaMode, 
   const [showControls, setShowControls] = useState(true)
   const [playbackRate, setPlaybackRate] = useState(1)
   
+  const [videoQuality, setVideoQuality] = useState(null)
+  
   // NEW: Loop and auto-play states
   const [loopSingle, setLoopSingle] = useState(settings.loopSingle)
   const [showLoopAnimation, setShowLoopAnimation] = useState(false)
@@ -253,6 +255,21 @@ const VideoPlayer = ({ video, videos, onNextVideo, onPreviousVideo, cinemaMode, 
     
     const handleLoadedMetadata = () => {
       setDuration(videoElement.duration)
+      
+      // Calculate Quality Label
+      const height = videoElement.videoHeight
+      if (height) {
+        let quality = ''
+        if (height >= 2160) quality = '4K'
+        else if (height >= 1440) quality = '1440p'
+        else if (height >= 1080) quality = '1080p'
+        else if (height >= 720) quality = '720p'
+        else if (height >= 480) quality = '480p'
+        else if (height >= 360) quality = '360p'
+        else quality = `${height}p`
+        setVideoQuality(quality)
+      }
+
       // Show tooltip for 5 seconds on first load
       if (showSpacebarTooltip && settings.tempSpeedEnabled) {
         tooltipTimeoutRef.current = setTimeout(() => {
@@ -1189,6 +1206,13 @@ const VideoPlayer = ({ video, videos, onNextVideo, onPreviousVideo, cinemaMode, 
                 </div>
               </button>
             </div>
+
+            {/* Quality Display */}
+            {videoQuality && (
+              <div className="quality-display">
+                {videoQuality}
+              </div>
+            )}
             
             {onToggleCinemaMode && (
               <button 
