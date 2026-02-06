@@ -1,15 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { API_BASE_URL } from '../../config'
 import { useDownload } from '../../hooks/useDownload'
 import { 
   Download, 
   Search, 
-  Link, 
   Folder, 
-  Film, 
-  Music, 
-  Video, 
-  Check, 
   AlertCircle,
   Clock,
   Eye,
@@ -17,7 +12,8 @@ import {
   Calendar,
   Languages,
   Plus,
-  ArrowRight
+  ArrowRight,
+  ChevronDown
 } from 'lucide-react'
 import './simpledownload.css'
 
@@ -26,17 +22,12 @@ const SimpleDownload = () => {
   const [loading, setLoading] = useState(false)
   const [metadata, setMetadata] = useState(null)
   const [formats, setFormats] = useState(null)
-  const [activeTab, setActiveTab] = useState('video_audio') // video_audio, video_only, audio_only, merge
-  const [selectedFormat, setSelectedFormat] = useState(null)
+  const [selectedQuality, setSelectedQuality] = useState(null)
   const [directories, setDirectories] = useState(['Not Watched'])
   const [selectedDir, setSelectedDir] = useState('Not Watched')
   const [newDirName, setNewDirName] = useState('')
   const [showNewDirInput, setShowNewDirInput] = useState(false)
   const [error, setError] = useState(null)
-  
-  // Merge states
-  const [selectedVideoOnly, setSelectedVideoOnly] = useState(null)
-  const [selectedAudioOnly, setSelectedAudioOnly] = useState(null)
 
   const { startDownload, downloads } = useDownload()
 
@@ -56,15 +47,13 @@ const SimpleDownload = () => {
     }
   }
 
-  const handleFetchFormats = async () => {
+  const handleFetch = async () => {
     if (!url) return
     setLoading(true)
     setError(null)
     setMetadata(null)
     setFormats(null)
-    setSelectedFormat(null)
-    setSelectedVideoOnly(null)
-    setSelectedAudioOnly(null)
+    setSelectedQuality(null)
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/download/formats`, {
@@ -77,10 +66,11 @@ const SimpleDownload = () => {
       if (data.success) {
         setMetadata(data.metadata)
         setFormats(data.formats)
-        // Auto-select first available tab
-        if (data.formats.video_audio.length > 0) setActiveTab('video_audio')
-        else if (data.formats.video_only.length > 0) setActiveTab('video_only')
-        else setActiveTab('audio_only')
+        
+        // Auto-select Best quality (first video_only format if available)
+        if (data.formats.video_only && data.formats.video_only.length > 0) {
+          setSelectedQuality(data.formats.video_only[0].resolution)
+        }
       } else {
         setError(data.error || 'Failed to fetch formats')
       }
@@ -92,18 +82,25 @@ const SimpleDownload = () => {
   }
 
   const handleDownload = async () => {
-    let formatId = ''
-    if (activeTab === 'merge') {
-      if (!selectedVideoOnly || !selectedAudioOnly) {
-        setError('Please select both video and audio for merging')
-        return
-      }
-      formatId = `${selectedVideoOnly.format_id}+${selectedAudioOnly.format_id}`
-    } else {
-      if (!selectedFormat) return
-      formatId = selectedFormat.format_id
+    if (!selectedQuality) {
+      setError('Please select a quality')
+      return
     }
 
+    // Find video format with selected quality
+    const videoFormat = formats.video_only.find(f => f.resolution === selectedQuality) || formats.video_only[0]
+    
+    // Find best audio in original language
+    const originalLang = metadata?.original_language || metadata?.language || 'und'
+    const audioFormats = formats.audio_only.filter(f => f.language === originalLang || f.language === 'und')
+    const audioFormat = audioFormats.length > 0 ? audioFormats[0] : formats.audio_only[0]
+
+    if (!videoFormat || !audioFormat) {
+      setError('Could not find suitable formats for merging')
+      return
+    }
+
+    const formatId = `${videoFormat.format_id}+${audioFormat.format_id}`
     const finalDir = showNewDirInput && newDirName.trim() ? newDirName.trim() : selectedDir
     
     setError(null)
@@ -115,22 +112,12 @@ const SimpleDownload = () => {
     if (!result.success) {
       setError(result.error)
     } else {
-      // Refresh directories if we created a new one
       if (showNewDirInput) {
         fetchDirectories()
         setShowNewDirInput(false)
         setNewDirName('')
       }
     }
-  }
-
-  const formatFileSize = (bytes) => {
-    if (!bytes) return 'N/A'
-    if (bytes === 0) return '0 B'
-    const k = 1024
-    const sizes = ['B', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
   const formatDuration = (seconds) => {
@@ -141,8 +128,22 @@ const SimpleDownload = () => {
     return h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`
   }
 
+  // Get unique quality options
+  const qualityOptions = formats?.video_only 
+    ? [...new Set(formats.video_only.map(f => f.resolution))].sort((a, b) => {
+        const aHeight = parseInt(a) || 0
+        const bHeight = parseInt(b) || 0
+        return bHeight - aHeight
+      })
+    : []
+
   return (
     <div className="simple-download-container">
+      <div className="simple-header">
+        <h1>Simple Download</h1>
+        <p>Just paste a link, select quality, and download. Audio will be merged automatically.</p>
+      </div>
+
       {/* URL Input */}
       <div className="url-input-container">
         <input
@@ -151,11 +152,11 @@ const SimpleDownload = () => {
           placeholder="Paste YouTube URL here..."
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleFetchFormats()}
+          onKeyDown={(e) => e.key === 'Enter' && handleFetch()}
         />
         <button 
           className="fetch-btn"
-          onClick={handleFetchFormats}
+          onClick={handleFetch}
           disabled={loading || !url}
         >
           {loading ? (
@@ -163,7 +164,7 @@ const SimpleDownload = () => {
           ) : (
             <Search size={20} />
           )}
-          Get Formats
+          Fetch Video
         </button>
       </div>
 
@@ -181,7 +182,7 @@ const SimpleDownload = () => {
           <div className="video-info">
             <h2 className="video-title">{metadata.title}</h2>
             <div className="video-uploader">
-              <User size={14} style={{ display: 'inline', marginRight: 4 }} />
+              <User size={14} />
               {metadata.uploader}
             </div>
             <div className="video-stats">
@@ -200,142 +201,64 @@ const SimpleDownload = () => {
               <div className="stat-item">
                 <Languages size={14} />
                 {metadata.language || 'Original'}
-                {metadata.original_language && (
-                  <span className="original-badge">ORIGINAL</span>
-                )}
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Formats Selection */}
-      {formats && (
-        <div className="formats-container">
-          <div className="format-tabs">
-            <button 
-              className={`tab-btn ${activeTab === 'video_audio' ? 'active' : ''}`}
-              onClick={() => setActiveTab('video_audio')}
+      {/* Quality Selection */}
+      {qualityOptions.length > 0 && (
+        <div className="quality-selection-container">
+          <h3>Select Video Quality</h3>
+          <p className="quality-hint">Audio will be automatically merged in original language with best quality</p>
+          
+          <div className="quality-dropdown-wrapper">
+            <ChevronDown className="dropdown-icon" size={20} />
+            <select 
+              className="quality-dropdown"
+              value={selectedQuality || ''}
+              onChange={(e) => setSelectedQuality(e.target.value)}
             >
-              <Video size={16} />
-              Video + Audio
-            </button>
-            <button 
-              className={`tab-btn ${activeTab === 'video_only' ? 'active' : ''}`}
-              onClick={() => setActiveTab('video_only')}
-            >
-              <Film size={16} />
-              Video Only
-            </button>
-            <button 
-              className={`tab-btn ${activeTab === 'audio_only' ? 'active' : ''}`}
-              onClick={() => setActiveTab('audio_only')}
-            >
-              <Music size={16} />
-              Audio Only
-            </button>
-            <button 
-              className={`tab-btn ${activeTab === 'merge' ? 'active' : ''}`}
-              onClick={() => setActiveTab('merge')}
-            >
-              <Plus size={16} />
-              Advanced Merge
-            </button>
-          </div>
-
-          <div className="formats-list-wrapper">
-            {activeTab === 'merge' ? (
-                <div className="merge-selection-container">
-                    <div className="merge-column">
-                        <h3>Select Video</h3>
-                        <div className="formats-list-mini">
-                            {formats.video_only.map(fmt => (
-                                <div 
-                                    key={fmt.format_id}
-                                    className={`format-card-mini ${selectedVideoOnly?.format_id === fmt.format_id ? 'selected' : ''}`}
-                                    onClick={() => setSelectedVideoOnly(fmt)}
-                                >
-                                    <span className="mini-res">{fmt.resolution}</span>
-                                    <span className="mini-meta">{fmt.ext} • {formatFileSize(fmt.filesize)}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                    <div className="merge-icon-divider"><Plus size={24} /></div>
-                    <div className="merge-column">
-                        <h3>Select Audio</h3>
-                        <div className="formats-list-mini">
-                            {formats.audio_only.map(fmt => (
-                                <div 
-                                    key={fmt.format_id}
-                                    className={`format-card-mini ${selectedAudioOnly?.format_id === fmt.format_id ? 'selected' : ''}`}
-                                    onClick={() => setSelectedAudioOnly(fmt)}
-                                >
-                                    <span className="mini-res">{fmt.language !== 'und' ? fmt.language : 'Audio'}</span>
-                                    <span className="mini-meta">{fmt.ext} • {formatFileSize(fmt.filesize)}</span>
-                                    {fmt.is_original && <span className="mini-badge">ORIGINAL</span>}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                <div className="formats-list">
-                    {formats[activeTab]?.map((fmt) => (
-                    <div 
-                        key={fmt.format_id}
-                        className={`format-card ${selectedFormat?.format_id === fmt.format_id ? 'selected' : ''}`}
-                        onClick={() => setSelectedFormat(fmt)}
-                    >
-                        <div className="format-res">
-                        {fmt.resolution !== 'N/A' ? fmt.resolution : fmt.audio_ext || fmt.ext}
-                        {selectedFormat?.format_id === fmt.format_id && <Check size={18} className="format-check" />}
-                        </div>
-                        <div className="format-meta">
-                        <span className="format-ext">{fmt.ext}</span>
-                        <span className="format-size">{formatFileSize(fmt.filesize)}</span>
-                        </div>
-                        <div className="format-badges">
-                        {fmt.vcodec && <span className="format-badge">{fmt.vcodec}</span>}
-                        {fmt.acodec && <span className="format-badge">{fmt.acodec}</span>}
-                        {fmt.fps && <span className="format-badge">{fmt.fps}fps</span>}
-                        {fmt.language && fmt.language !== 'und' && <span className="format-badge lang">{fmt.language}</span>}
-                        {fmt.is_original && <span className="format-badge original">ORIGINAL</span>}
-                        </div>
-                    </div>
-                    ))}
-                    {formats[activeTab]?.length === 0 && (
-                    <div className="no-formats">No formats available for this category</div>
-                    )}
-                </div>
-            )}
+              {qualityOptions.map(quality => (
+                <option key={quality} value={quality}>
+                  {quality === '3840x2160' ? '4K (2160p)' :
+                   quality === '2560x1440' ? '2K (1440p)' :
+                   quality === '1920x1080' ? 'Full HD (1080p)' :
+                   quality === '1280x720' ? 'HD (720p)' :
+                   quality === '854x480' ? 'SD (480p)' :
+                   quality === '640x360' ? '360p' :
+                   quality}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       )}
 
       {/* Action Bar */}
-      {(selectedFormat || (selectedVideoOnly && selectedAudioOnly)) && (
+      {selectedQuality && (
         <div className="action-bar">
           <div className="dir-selector-wrapper">
             <div className="dir-selector">
-                <Folder size={20} color="#aaa" />
-                <select 
+              <Folder size={20} color="#aaa" />
+              <select 
                 value={selectedDir} 
                 onChange={(e) => setSelectedDir(e.target.value)}
                 className="dir-select"
                 disabled={showNewDirInput}
-                >
+              >
                 {directories.map(dir => (
-                    <option key={dir} value={dir}>{dir}</option>
+                  <option key={dir} value={dir}>{dir}</option>
                 ))}
-                </select>
-                <button 
-                  className={`new-dir-toggle ${showNewDirInput ? 'active' : ''}`}
-                  onClick={() => setShowNewDirInput(!showNewDirInput)}
-                  title="Create New Folder"
-                >
-                  <Plus size={18} />
-                </button>
+              </select>
+              <button 
+                className={`new-dir-toggle ${showNewDirInput ? 'active' : ''}`}
+                onClick={() => setShowNewDirInput(!showNewDirInput)}
+                title="Create New Folder"
+              >
+                <Plus size={18} />
+              </button>
             </div>
             
             {showNewDirInput && (
@@ -369,7 +292,7 @@ const SimpleDownload = () => {
           {downloads.slice(0, 3).map(dl => (
             <div key={dl.id} className="mini-progress-item">
               <div className="mini-progress-info">
-                <span className="mini-filename">{dl.filename || 'Starting...'}</span>
+                <span className="mini-filename">{dl.filename || dl.title || 'Starting...'}</span>
                 <span className="mini-percent">{dl.progress}%</span>
               </div>
               <div className="mini-progress-bar">
@@ -382,7 +305,7 @@ const SimpleDownload = () => {
           ))}
           {downloads.length > 3 && (
             <div className="view-all-link">
-               <a href="/download/progress">View all processes <ArrowRight size={14} /></a>
+              <a href="/download/progress">View all processes <ArrowRight size={14} /></a>
             </div>
           )}
         </div>

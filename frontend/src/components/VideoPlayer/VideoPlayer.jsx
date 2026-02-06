@@ -270,11 +270,11 @@ const VideoPlayer = ({ video, videos, onNextVideo, onPreviousVideo, cinemaMode, 
         setVideoQuality(quality)
       }
 
-      // Show tooltip for 5 seconds on first load
+      // Show tooltip for 10 seconds on first load
       if (showSpacebarTooltip && settings.tempSpeedEnabled) {
         tooltipTimeoutRef.current = setTimeout(() => {
           setShowSpacebarTooltip(false)
-        }, 5000)
+        }, 10000)
       }
     }
     
