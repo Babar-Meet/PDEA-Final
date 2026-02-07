@@ -9,7 +9,8 @@ import {
   Settings,
   Trash2,
   Download,
-  Wind
+  Wind,
+  Headphones
 } from 'lucide-react'
 import './Sidebar.css'
 
@@ -39,7 +40,7 @@ const Sidebar = ({ size, videos }) => {
 
   const mainItems = [
     { icon: <Home size={24} />, label: 'Home', path: '/' },
-    { icon: <Wind size={24} />, label: 'Ambience', path: '/ambience' },
+    { icon: <Headphones  size={24} />, label: 'Ambience', path: '/ambience' },
     { icon: <Download size={24} />, label: 'Download', path: '/download' }
   ]
 
