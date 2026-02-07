@@ -128,6 +128,42 @@ const SimpleDownload = () => {
     return h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`
   }
 
+  const formatFileSize = (bytes) => {
+    if (!bytes || bytes === 0) return ''
+    const gb = bytes / (1024 * 1024 * 1024)
+    const mb = bytes / (1024 * 1024)
+    
+    if (gb >= 1) {
+      return `${gb.toFixed(2)} GB`
+    } else if (mb >= 1) {
+      return `${Math.round(mb)} MB`
+    } else {
+      return `${Math.round(bytes / 1024)} KB`
+    }
+  }
+
+  const getSizeForQuality = (quality) => {
+    if (!formats) return ''
+    
+    // Find video format with selected quality
+    const videoFormat = formats.video_only.find(f => f.resolution === quality)
+    if (!videoFormat) return ''
+    
+    // Find best audio in original language
+    const originalLang = metadata?.original_language || metadata?.language || 'und'
+    const audioFormats = formats.audio_only.filter(f => f.language === originalLang || f.language === 'und')
+    const audioFormat = audioFormats.length > 0 ? audioFormats[0] : formats.audio_only[0]
+    
+    if (!audioFormat) return ''
+    
+    // Calculate total size (video + audio)
+    const videoSize = videoFormat.filesize || videoFormat.filesize_approx || 0
+    const audioSize = audioFormat.filesize || audioFormat.filesize_approx || 0
+    const totalSize = videoSize + audioSize
+    
+    return totalSize > 0 ? formatFileSize(totalSize) : ''
+  }
+
   // Get unique quality options
   const qualityOptions = formats?.video_only 
     ? [...new Set(formats.video_only.map(f => f.resolution))].sort((a, b) => {
@@ -220,9 +256,9 @@ const SimpleDownload = () => {
               value={selectedQuality || ''}
               onChange={(e) => setSelectedQuality(e.target.value)}
             >
-              {qualityOptions.map(quality => (
-                <option key={quality} value={quality}>
-                  {
+              {qualityOptions.map(quality => {
+                const size = getSizeForQuality(quality)
+                const qualityLabel = 
                    quality === '23040x12960' ? '24K (12960p)' :
                    quality === '15360x8640' ? '16K (8640p)' :
                    quality === '11520x6480' ? '12K (6480p)' :
@@ -233,9 +269,14 @@ const SimpleDownload = () => {
                    quality === '1280x720' ? 'HD (720p)' :
                    quality === '854x480' ? 'SD (480p)' :
                    quality === '640x360' ? '360p' :
-                   quality}
-                </option>
-              ))}
+                   quality
+                
+                return (
+                  <option key={quality} value={quality}>
+                    {size ? `${qualityLabel} (${size})` : qualityLabel}
+                  </option>
+                )
+              })}
             </select>
           </div>
         </div>
