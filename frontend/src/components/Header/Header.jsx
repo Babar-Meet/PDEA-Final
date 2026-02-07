@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { API_BASE_URL } from "../../config";
 import { useNavigate } from "react-router-dom";
+import { useDownload } from "../../hooks/useDownload";
 import {
   Menu,
   Search,
@@ -13,6 +14,7 @@ import {
   InfoIcon,
   DollarSign,
   X,
+  Download,
 } from "lucide-react";
 import "./Header.css";
 
@@ -25,10 +27,16 @@ const Header = ({ toggleSidebar }) => {
   const [isSearching, setIsSearching] = useState(false);
 
   const navigate = useNavigate();
+  const { downloads } = useDownload();
   const aboutRef = useRef(null);
   const socialsRef = useRef(null);
   const searchResultsRef = useRef(null);
   const searchInputRef = useRef(null);
+
+  // Calculate active downloads
+  const activeDownloads = downloads.filter(d => 
+    ['downloading', 'starting', 'queued'].includes(d.status)
+  );
 
   // Function to calculate search relevance score
   const calculateRelevanceScore = (video, query, queryWords) => {
@@ -445,6 +453,18 @@ const Header = ({ toggleSidebar }) => {
       </div>
 
       <div className="header__right">
+        {/* Download Indicator */}
+        {activeDownloads.length > 0 && (
+          <div 
+            className="header__download-indicator" 
+            onClick={() => navigate('/download/progress')}
+            title={`${activeDownloads.length} download${activeDownloads.length > 1 ? 's' : ''} in progress`}
+          >
+            <Download size={20} className="download-icon-pulse" />
+            <span className="download-count">{activeDownloads.length}</span>
+          </div>
+        )}
+
         <div ref={aboutRef} className="header__icon-btn" onClick={toggleAbout}>
           <User size={22} />
           {showAbout && (

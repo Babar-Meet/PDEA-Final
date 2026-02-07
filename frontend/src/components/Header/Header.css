@@ -440,6 +440,47 @@
   border-radius: 6px;
 }
 
+/* Download Indicator */
+.header__download-indicator {
+  position: relative;
+  background: rgba(62, 166, 255, 0.15);
+  border: 1px solid #3ea6ff;
+  /* color: #3ea6ff; */
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.3s ease;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.header__download-indicator:hover {
+  background: rgba(62, 166, 255, 0.25);
+  transform: scale(1.05);
+}
+
+.download-icon-pulse {
+  /* animation: pulse 2s infinite; */
+}
+
+.download-count {
+  min-width: 18px;
+  text-align: center;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
 
 
 @media (max-width: 768px) {
