@@ -5,10 +5,14 @@
   background-color: #000;
   border-radius: 12px;
   overflow: hidden;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: cursor 0.3s;
+}
+
+.video-player:not(.show-controls) {
+  cursor: none;
 }
 
 .video-player.cinema-mode {
