@@ -627,16 +627,37 @@ exports.updateThumbnail = async (req, res) => {
       fs.mkdirSync(thumbnailDir, { recursive: true });
     }
 
-    // Remove old thumbnails with different extensions if they exist
+    // Backup and remove old thumbnails with different extensions if they exist
     const extensions = ['.jpg', '.jpeg', '.png', '.webp'];
     for (const ext of extensions) {
       try {
         const p = path.join(thumbnailsDir, thumbnailRelativeName + ext);
         if (fs.existsSync(p)) {
+          // Backup to trash before deleting
+          const backupDir = path.join(trashDir, 'thumbnails_backup');
+          if (!fs.existsSync(backupDir)) {
+            fs.mkdirSync(backupDir, { recursive: true });
+          }
+
+          // Generate unique backup name with numbering (01, 02, 03...)
+          let version = 1;
+          let backupPath;
+          let backupFileName;
+          do {
+            const vStr = version.toString().padStart(2, '0');
+            backupFileName = `${thumbnailRelativeName.replace(/[\\/]/g, '_')}_${vStr}${ext}`;
+            backupPath = path.join(backupDir, backupFileName);
+            version++;
+          } while (fs.existsSync(backupPath));
+
+          // Copy to backup
+          fs.copyFileSync(p, backupPath);
+          
+          // Delete original
           fs.unlinkSync(p);
         }
       } catch (e) {
-        console.warn(`Could not delete old thumbnail: ${e.message}`);
+        console.warn(`Could not backup/delete old thumbnail: ${e.message}`);
       }
     }
 
