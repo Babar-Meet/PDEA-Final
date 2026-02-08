@@ -96,6 +96,28 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #303030;
+}
+.watch__actions > .cinema-toggle-btn {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+.watch__left-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+}
+
+/* old code in case want it back
+.watch__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
   padding-bottom: 20px;
   border-bottom: 1px solid #303030;
@@ -105,7 +127,7 @@
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-}
+} */
 
 .action-btn {
   display: flex;
