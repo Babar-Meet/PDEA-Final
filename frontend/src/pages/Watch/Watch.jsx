@@ -3,7 +3,7 @@ import { API_BASE_URL } from '../../config'
 import { useParams, useNavigate } from 'react-router-dom'
 import VideoPlayer from '../../components/VideoPlayer/VideoPlayer'
 import VideoSidebar from '../../components/VideoSidebar/VideoSidebar'
-import { ThumbsUp, ThumbsDown, Share2, Download, MoreVertical, Trash2, Trash, AlertTriangle, Monitor } from 'lucide-react'
+import { ThumbsUp, ThumbsDown, Share2, Download, MoreVertical, Trash2, Trash, AlertTriangle, Monitor, Folder } from 'lucide-react'
 import './Watch.css'
 
 const Watch = ({ videos, fetchVideos }) => {
@@ -143,6 +143,22 @@ const Watch = ({ videos, fetchVideos }) => {
   const categoryDisplay = video.category || 'Uncategorized'
   const folderPath = video.folder ? video.folder.split('/').filter(Boolean).join(' / ') : ''
 
+  const handleOpenFolder = async () => {
+    if (!video) return
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/videos/open-folder/${encodeURIComponent(video.relativePath || video.id)}`, {
+        method: 'POST'
+      })
+      const data = await response.json()
+      if (!data.success) {
+        alert('Failed to open folder: ' + data.error)
+      }
+    } catch (error) {
+      console.error('Error opening folder:', error)
+      alert('Error opening folder')
+    }
+  }
+
   return (
     <div className={`watch ${cinemaMode ? 'cinema-mode' : ''}`}>
       {/* Delete Confirmation Modal */}
@@ -255,24 +271,24 @@ const Watch = ({ videos, fetchVideos }) => {
           
           <div className="watch__actions">
             <div className="watch__left-actions">
-              <button className="action-btn like-btn">
+              {/* <button className="action-btn like-btn">
                 <ThumbsUp size={20} />
                 <span>{video.likes}</span>
-              </button>
+              </button> */}
               
-              <button className="action-btn">
+              {/* <button className="action-btn">
                 <ThumbsDown size={20} />
                 <span>Dislike</span>
-              </button>
+              </button> */}
               
-              <button className="action-btn">
+              {/* <button className="action-btn">
                 <Share2 size={20} />
                 <span>Share</span>
-              </button>
+              </button> */}
               
-              <button className="action-btn">
-                <Download size={20} />
-                <span>Save</span>
+              <button className="action-btn" onClick={handleOpenFolder} title="Open folder containing this video">
+                <Folder size={20} />
+                <span>Open Folder</span>
               </button>
 
               {/* Quick Navigation Buttons */}

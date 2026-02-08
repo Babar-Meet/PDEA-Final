@@ -1,7 +1,8 @@
 const fs = require('fs');
 const path = require('path');
+const { exec } = require('child_process');
 const videoService = require('../services/videoService');
-const thumbnailService = require('../services/thumbnailService'); // Add this
+const thumbnailService = require('../services/thumbnailService'); 
 
 // const publicDir = path.join('C:', 'folder', 'subfoler', 'subsub folder');
 
@@ -555,6 +556,45 @@ exports.emptyTrash = async (req, res) => {
     res.status(500).json({ 
       success: false, 
       error: 'Failed to empty trash' 
+    });
+  }
+};
+
+// NEW: Open video folder in explorer
+exports.openFolder = async (req, res) => {
+  try {
+    const relativePath = decodeURIComponent(req.params.path);
+    const videoPath = path.join(publicDir, relativePath);
+    const folderPath = path.dirname(videoPath);
+
+    if (!fs.existsSync(folderPath)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Folder not found'
+      });
+    }
+
+    // Windows command to open explorer and select the file
+    // explorer.exe /select,"path\to\file"
+    const command = `explorer.exe /select,"${videoPath}"`;
+
+    exec(command, (error) => {
+      // explorer.exe often returns exit code 1 even when successful
+      if (error && error.code !== 1) {
+        console.error('Error opening folder:', error);
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to open folder'
+        });
+      }
+      res.json({ success: true, message: 'Folder opened successfully' });
+    });
+
+  } catch (error) {
+    console.error('Error in openFolder:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
     });
   }
 };

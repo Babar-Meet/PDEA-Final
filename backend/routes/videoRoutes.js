@@ -32,4 +32,7 @@ router.get('/thumbnail-progress', videoController.getThumbnailProgress);
 // NEW: Save video progress
 router.post('/progress', videoController.saveVideoProgress);
 
+// NEW: Open video folder in explorer
+router.post('/open-folder/:path(*)', videoController.openFolder);
+
 module.exports = router;
