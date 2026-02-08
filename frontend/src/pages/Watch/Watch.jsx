@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { API_BASE_URL } from '../../config'
 import { useParams, useNavigate } from 'react-router-dom'
 import VideoPlayer from '../../components/VideoPlayer/VideoPlayer'
 import VideoSidebar from '../../components/VideoSidebar/VideoSidebar'
-import { ThumbsUp, ThumbsDown, Share2, Download, MoreVertical, Trash2, Trash, AlertTriangle, Monitor, Folder } from 'lucide-react'
+import { ThumbsUp, ThumbsDown, Share2, Download, MoreVertical, Trash2, Trash, AlertTriangle, Monitor, Folder, Camera } from 'lucide-react'
 import './Watch.css'
 
 const Watch = ({ videos, fetchVideos }) => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const playerRef = useRef(null)
   const [video, setVideo] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -159,6 +160,41 @@ const Watch = ({ videos, fetchVideos }) => {
     }
   }
 
+  const handleUpdateThumbnail = async () => {
+    if (!video || !playerRef.current) return
+    
+    try {
+      const frameData = playerRef.current.captureFrame();
+      if (!frameData) {
+        alert('Failed to capture video frame');
+        return;
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/api/videos/update-thumbnail`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          relativePath: video.relativePath || video.id,
+          image: frameData
+        })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        alert('Thumbnail updated successfully!');
+        if (fetchVideos) await fetchVideos();
+        navigate('/')
+      } else {
+        alert('Failed to update thumbnail: ' + data.error);
+      }
+    } catch (error) {
+      console.error('Error updating thumbnail:', error);
+      alert('Error updating thumbnail');
+    }
+  }
+
   return (
     <div className={`watch ${cinemaMode ? 'cinema-mode' : ''}`}>
       {/* Delete Confirmation Modal */}
@@ -231,6 +267,7 @@ const Watch = ({ videos, fetchVideos }) => {
       <div className="watch__main">
         <div className="watch__player">
           <VideoPlayer 
+            ref={playerRef}
             video={video} 
             videos={videos}
             onNextVideo={handleNextVideo}
@@ -291,6 +328,11 @@ const Watch = ({ videos, fetchVideos }) => {
                 <span>Open Folder</span>
               </button>
 
+              <button className="action-btn" onClick={handleUpdateThumbnail} title="Update video thumbnail with current frame">
+                <Camera size={20} />
+                <span>Update Thumbnail</span>
+              </button>
+
               {/* Quick Navigation Buttons */}
               {previousVideo && (
                 <button 
@@ -339,11 +381,6 @@ const Watch = ({ videos, fetchVideos }) => {
             >
               <Monitor size={20} />
               <span>Cinema</span>
-            </button>
-
-
-            <button className="action-btn menu-btn">
-              <MoreVertical size={20} />
             </button>
           </div>
           

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState, useEffect, useImperativeHandle, forwardRef } from 'react'
 import { API_BASE_URL } from '../../config'
 import { 
   Play, 
@@ -25,10 +25,26 @@ import './VideoPlayer.css'
 
 const SPEED_OPTIONS = [3, 2.5, 2, 1.75, 1.5, 1.25, 1, 0.75, 0.5, 0.25, 0.01]
 
-const VideoPlayer = ({ video, videos, onNextVideo, onPreviousVideo, cinemaMode, onToggleCinemaMode }) => {
+const VideoPlayer = forwardRef(({ video, videos, onNextVideo, onPreviousVideo, cinemaMode, onToggleCinemaMode }, ref) => {
   const { settings } = useVideoPlayerSettings()
   
   const videoRef = useRef(null)
+  
+  useImperativeHandle(ref, () => ({
+    captureFrame: () => {
+      if (!videoRef.current) return null;
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      
+      return canvas.toDataURL('image/jpeg', 0.9);
+    }
+  }));
+
   const [isPlaying, setIsPlaying] = useState(false)
   const [volume, setVolume] = useState(1)
   const [isMuted, setIsMuted] = useState(false)
@@ -978,6 +994,7 @@ const VideoPlayer = ({ video, videos, onNextVideo, onPreviousVideo, cinemaMode, 
         src={`${API_BASE_URL}/api/videos/stream/${encodeURIComponent(video.relativePath || video.id)}`}
         onTimeUpdate={handleTimeUpdate}
         loop={loopSingle}
+        crossOrigin="anonymous"
       />
       
       {/* Play/Pause Animation Overlay - Center */}
@@ -1236,6 +1253,6 @@ const VideoPlayer = ({ video, videos, onNextVideo, onPreviousVideo, cinemaMode, 
       </div>
     </div>
   )
-}
+})
 
 export default VideoPlayer

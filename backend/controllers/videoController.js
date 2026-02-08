@@ -599,6 +599,73 @@ exports.openFolder = async (req, res) => {
   }
 };
 
+// NEW: Update video thumbnail
+exports.updateThumbnail = async (req, res) => {
+  try {
+    const { relativePath, image } = req.body;
+    
+    if (!relativePath || !image) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing relativePath or image data' 
+      });
+    }
+
+    // Determine thumbnail path (same logic as videoService/thumbnailService)
+    const nameWithoutExt = path.basename(relativePath, path.extname(relativePath));
+    const relativeDir = path.dirname(relativePath);
+    const thumbnailRelativeName = relativeDir === '.' ? 
+      nameWithoutExt : 
+      path.join(relativeDir, nameWithoutExt);
+    
+    // We'll save as .jpg as it's the standard for this app
+    const thumbnailPath = path.join(thumbnailsDir, thumbnailRelativeName + '.jpg');
+    const thumbnailDir = path.dirname(thumbnailPath);
+
+    // Ensure directory exists
+    if (!fs.existsSync(thumbnailDir)) {
+      fs.mkdirSync(thumbnailDir, { recursive: true });
+    }
+
+    // Remove old thumbnails with different extensions if they exist
+    const extensions = ['.jpg', '.jpeg', '.png', '.webp'];
+    for (const ext of extensions) {
+      try {
+        const p = path.join(thumbnailsDir, thumbnailRelativeName + ext);
+        if (fs.existsSync(p)) {
+          fs.unlinkSync(p);
+        }
+      } catch (e) {
+        console.warn(`Could not delete old thumbnail: ${e.message}`);
+      }
+    }
+
+    // Convert base64 to buffer
+    const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    if (buffer.length === 0) {
+      throw new Error('Converted buffer is empty');
+    }
+
+    // Save the file
+    fs.writeFileSync(thumbnailPath, buffer);
+
+    res.json({ 
+      success: true, 
+      message: 'Thumbnail updated successfully',
+      path: `/thumbnails/${encodeURIComponent(thumbnailRelativeName.replace(/\\/g, '/') + '.jpg')}`
+    });
+
+  } catch (error) {
+    console.error('Error updating thumbnail:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to update thumbnail' 
+    });
+  }
+};
+
 // Helper function to format file size (copied from format.js)
 function formatFileSize(bytes = 0) {
   if (bytes < 1024) return bytes + ' B'

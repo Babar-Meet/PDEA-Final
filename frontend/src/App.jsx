@@ -42,7 +42,7 @@ function App() {
             video.url ||
             `/api/videos/stream/${encodeURIComponent(video.relativePath || video.id)}`,
           thumbnail: video.thumbnail.startsWith("/")
-            ? `${API_BASE_URL}${video.thumbnail}`
+            ? `${API_BASE_URL}${video.thumbnail}?t=${Date.now()}`
             : video.thumbnail,
         }));
 
