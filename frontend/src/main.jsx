@@ -1,3 +1,15 @@
+// src/main.jsx
+
+// Auto-upgrade all WebSocket connections to wss on HTTPS
+const OriginalWebSocket = window.WebSocket;
+window.WebSocket = function(url, protocols) {
+  if (typeof url === 'string' && url.startsWith('ws://') && window.location.protocol === 'https:') {
+    console.log(`Upgrading WebSocket: ${url} → ${url.replace('ws://', 'wss://')}`);
+    url = url.replace('ws://', 'wss://');
+  }
+  return new OriginalWebSocket(url, protocols);
+};
+
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";
